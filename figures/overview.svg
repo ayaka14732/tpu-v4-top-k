@@ -12,10 +12,10 @@
 <line x1="590.0" y1="44.0" x2="590.0" y2="672.0" stroke="#e4e3df" stroke-width="1"/>
 <text x="590.0" y="690.0" font-size="12" text-anchor="middle" fill="#52514e" font-weight="normal">2</text>
 <text x="400.0" y="710.0" font-size="12" text-anchor="middle" fill="#52514e" font-weight="normal">本文 / 官方 Pallas（周期数之比，对数刻度）</text>
-<rect x="210.0" y="14.0" width="12.0" height="12.0" rx="2" fill="#2a78d6" stroke="none"/>
-<text x="228.0" y="25.0" font-size="12" text-anchor="start" fill="#0b0b0b" font-weight="normal">Pallas 源码</text>
-<rect x="340.0" y="14.0" width="12.0" height="12.0" rx="2" fill="#1baf7a" stroke="none"/>
-<text x="358.0" y="25.0" font-size="12" text-anchor="start" fill="#0b0b0b" font-weight="normal">改写 executable</text>
+<rect x="120.0" y="14.0" width="12.0" height="12.0" rx="2" fill="#2a78d6" stroke="none"/>
+<text x="138.0" y="25.0" font-size="12" text-anchor="start" fill="#0b0b0b" font-weight="normal">Pallas 源码</text>
+<rect x="295.0" y="14.0" width="12.0" height="12.0" rx="2" fill="#1baf7a" stroke="none"/>
+<text x="313.0" y="25.0" font-size="12" text-anchor="start" fill="#0b0b0b" font-weight="normal">改写 executable</text>
 <rect x="470.0" y="14.0" width="12.0" height="12.0" rx="2" fill="#4a3aa7" stroke="none"/>
 <text x="488.0" y="25.0" font-size="12" text-anchor="start" fill="#0b0b0b" font-weight="normal">进程内补丁</text>
 <text x="20.0" y="62.0" font-size="12" text-anchor="start" fill="#0b0b0b" font-weight="bold">行宽</text>

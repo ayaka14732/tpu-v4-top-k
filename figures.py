@@ -1,4 +1,4 @@
-"""生成 report.md 中的图：数据图读 results/ 中的记录，示意图按正文的算法画出。输出 figures/ 下的 SVG，只依赖标准库。
+"""生成 report.md 与 report.en.md 中的图：数据图读 results/ 中的记录，示意图按正文的算法画出。中文版输出到 figures/，英文版输出到 figures/en/，只依赖标准库。
 
 颜色按实体固定：官方 Pallas 橙色，原生 XLA 灰色虚线，Pallas 源码写成的本文写法蓝色，改写 executable 的写法青色，进程内补丁的写法紫色。
 """
@@ -6,6 +6,7 @@ from collections.abc import Callable
 import json
 import math
 from pathlib import Path
+import re
 from xml.sax.saxutils import escape
 
 HERE = Path(__file__).resolve().parent
@@ -24,6 +25,68 @@ SOURCE = '#2a78d6'
 REWRITE = '#1baf7a'
 PATCH = '#4a3aa7'
 HIGHLIGHT = '#cde2fb'
+# 英文版的图把文字逐条换掉；f-string 生成的文字用正则匹配。
+ENGLISH = {
+    '逐元素：向量 ALU': 'Elementwise: vector ALU',
+    '结果': 'Result',
+    '两个寄存器的同一子通道、同一通道相遇': 'Operands meet at the same sublane and lane of two registers',
+    '结果下一个周期可用，每周期两条': 'Result ready next cycle; two per cycle',
+    '跨通道：XLU': 'Cross-lane: XLU',
+    '提交': 'Push',
+    '相邻两次提交至少隔 8 个周期': 'Pushes at least 8 cycles apart',
+    '同一个队列上连续提交三次：提交后 79 个周期才能取回': 'Three pushes on one queue: each result pops 79 cycles after its push',
+    '周期': 'cycles',
+    '原生 XLA': 'Native XLA',
+    '官方 Pallas': 'Official Pallas',
+    '本文的通用分派': 'Our dispatcher',
+    '周期数（对数刻度）': 'Cycles (log scale)',
+    '周期数': 'Cycles',
+    '行数': 'Rows',
+    '输入': 'Input',
+    '1 折叠（vsxpose）': '1 Fold (vsxpose)',
+    '同一行变成 16 列，每列 8 个': 'One row becomes 16 columns of 8',
+    '2 列内排序': '2 Sort within columns',
+    '数出列内名次，vst.iar 按名次写': 'Rank within column; vst.iar writes by rank',
+    '3 跨组数秩：vrot 把别的组的列对齐过来，对方的列降序，三次比较二分数出有几个排在前面': '3 Cross-group rank: vrot aligns another group\'s column; it is descending, so three comparisons binary-search how many precede',
+    '自己的列': 'Own column',
+    '旋转过来的列': 'Rotated column',
+    '比较前的区间': 'Before comparing',
+    '第 1 次比较后': 'After comparison 1',
+    '第 2 次比较后': 'After comparison 2',
+    '1 整体转置': '1 Full transpose',
+    '[R,128]：第 r 行': '[R,128]: row r',
+    '[128,R]：': '[128,R]:',
+    '第 r 个通道': 'lane r',
+    '2 每个子通道排出候选列': '2 Candidate columns per sublane',
+    '一个通道上的 8 条候选列，各 8 层，降序': '8 descending columns of 8 per lane',
+    '列首（第 0 层）参加比赛': 'Heads (level 0) compete',
+    '3 败者树：每轮只重赛三场': '3 Loser tree: three replays per round',
+    '新列首': 'New head',
+    '上一轮的胜者来自第 5 列，第 5 列推进一格；': 'The last winner came from column 5, which advances;',
+    '新列首沿路径与三个节点记下的败者比赛，': 'the new head replays the losers stored on its path;',
+    '其余四个节点不变': 'the other four nodes stay valid',
+    '转置加败者树': 'Transpose + loser tree',
+    '行宽': 'Row width',
+    '方向': 'Direction',
+    '基本形状': 'Basic shape',
+    'Pallas 源码': 'Pallas source',
+    '改写 executable': 'Executable rewriting',
+    '进程内补丁': 'In-process patch',
+    '本文 / 官方 Pallas（周期数之比，对数刻度）': 'Ours / official Pallas (cycle ratio, log scale)',
+}
+ENGLISH_PATTERNS = ((r'^队列 (\d+)$', r'Queue \1'), (r'^第 (\d+) 行的 128 个元素$', r'The 128 elements of row \1'), (r' 沿 axis 0$', r' along axis 0'))
+LANGUAGE = 'zh'
+
+def translate(content: str) -> str:
+    """LANGUAGE 为 en 时把图中的中文换成英文。"""
+    if LANGUAGE == 'zh':
+        return content
+    if content in ENGLISH:
+        return ENGLISH[content]
+    for pattern, replacement in ENGLISH_PATTERNS:
+        content = re.sub(pattern, replacement, content)
+    assert not re.search(r'[\u4e00-\u9fff]', content), content
+    return content
 
 class Svg:
     def __init__(self, width: int, height: int) -> None:
@@ -31,7 +94,7 @@ class Svg:
         self.parts: list[str] = [f'<rect x="0" y="0" width="{width}" height="{height}" fill="{SURFACE}"/>']
 
     def text(self, x: float, y: float, content: str, *, size: float = 13, anchor: str = 'start', color: str = INK, weight: str = 'normal') -> None:
-        self.parts.append(f'<text x="{x:.1f}" y="{y:.1f}" font-size="{size}" text-anchor="{anchor}" fill="{color}" font-weight="{weight}">{escape(content)}</text>')
+        self.parts.append(f'<text x="{x:.1f}" y="{y:.1f}" font-size="{size}" text-anchor="{anchor}" fill="{color}" font-weight="{weight}">{escape(translate(content))}</text>')
 
     def line(self, x1: float, y1: float, x2: float, y2: float, *, color: str = MUTED, width: float = 1, dash: str = '', arrow: bool = False) -> None:
         extra = (f' stroke-dasharray="{dash}"' if dash else '') + (' marker-end="url(#arrow)"' if arrow else '')
@@ -52,8 +115,9 @@ class Svg:
     def save(self, name: str) -> None:
         marker = f'<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="{MUTED}"/></marker></defs>'
         body = '\n'.join(self.parts)
-        FIGURES.mkdir(exist_ok=True)
-        (FIGURES / name).write_text(f'<svg xmlns="http://www.w3.org/2000/svg" width="{self.width}" height="{self.height}" viewBox="0 0 {self.width} {self.height}" font-family="{FONT}">\n{marker}\n{body}\n</svg>\n')
+        folder = FIGURES if LANGUAGE == 'zh' else FIGURES / LANGUAGE
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / name).write_text(f'<svg xmlns="http://www.w3.org/2000/svg" width="{self.width}" height="{self.height}" viewBox="0 0 {self.width} {self.height}" font-family="{FONT}">\n{marker}\n{body}\n</svg>\n')
 
 def grid(svg: Svg, x: float, y: float, rows: int, columns: int, cell: float, *, fill: Callable[[int, int], str] = lambda r, c: SURFACE) -> None:
     """rows × columns 个方格，fill(r, c) 给出每格的颜色。"""
@@ -228,13 +292,13 @@ def loser_figure() -> None:
 def rows_figure() -> None:
     sweeps = {8: load('transpose.json'), 16: load('transpose16.json')}
     transposed = {record['shape'][0]: record['median'] for record in load('rows.json') if record['variant'] == 'transposed'}
-    svg = Svg(980, 360)
+    svg = Svg(1120, 360)
     for panel, k in enumerate((8, 16)):
         records = sweeps[k]
         rows = [record['rows'] for record in records]
         official = [record['official']['median'] for record in records]
         loser = [record['transpose']['median'] for record in records]
-        left, top, width, height = 70 + panel * 480, 50, 320, 240
+        left, top, width, height = 70 + panel * 560, 50, 320, 240
         ceiling = 1400 if k == 8 else 2800
         x = lambda r: left + (r - 8) / 120 * width
         y = lambda v: top + (1 - v / ceiling) * height
@@ -274,8 +338,8 @@ def overview_figure(cases: dict[str, dict[str, float]]) -> None:
         svg.text(x(ratio), top + rows_used + 18, f'{ratio:g}', size=12, anchor='middle', color=MUTED)
     svg.text(left + width / 2, top + rows_used + 38, '本文 / 官方 Pallas（周期数之比，对数刻度）', size=12, anchor='middle', color=MUTED)
     for i, (name, color) in enumerate(legend):
-        svg.rect(left + i * 130, 14, 12, 12, fill=color, radius=2)
-        svg.text(left + i * 130 + 18, 25, name, size=12)
+        svg.rect(120 + i * 175, 14, 12, 12, fill=color, radius=2)
+        svg.text(120 + i * 175 + 18, 25, name, size=12)
     y = top
     for group, labels in groups:
         svg.text(20, y + 12, group, size=12, weight='bold')
@@ -295,13 +359,15 @@ def overview_figure(cases: dict[str, dict[str, float]]) -> None:
     svg.save('overview.svg')
 
 def main() -> None:
+    global LANGUAGE
     cases = results()
-    xlu_figure()
-    basic_figure(cases)
-    fold_figure()
-    loser_figure()
-    rows_figure()
-    overview_figure(cases)
+    for LANGUAGE in ('zh', 'en'):
+        xlu_figure()
+        basic_figure(cases)
+        fold_figure()
+        loser_figure()
+        rows_figure()
+        overview_figure(cases)
 
 if __name__ == '__main__':
     main()
