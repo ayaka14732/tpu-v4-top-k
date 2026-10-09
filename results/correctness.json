@@ -1,0 +1,6800 @@
+[
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 1,
+    "variant": "xla",
+    "rows": 456,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 1,
+    "variant": "official",
+    "rows": 456,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 196,
+    "wrong_bits": 196,
+    "any": 196,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 28,
+        "wrong_bits": 28,
+        "any": 28
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 104,
+        "wrong_bits": 104,
+        "any": 104
+      },
+      "phase_count": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 1,
+    "variant": "ours",
+    "rows": 456,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "xla",
+    "rows": 512,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 80,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "official",
+    "rows": 512,
+    "out_of_range": 0,
+    "duplicate": 16,
+    "unpaired_bits": 205,
+    "wrong_bits": 197,
+    "any": 213,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 29,
+        "wrong_bits": 29,
+        "any": 29
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 104,
+        "wrong_bits": 104,
+        "any": 112
+      },
+      "phase_count": {
+        "rows": 80,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 8,
+        "wrong_bits": 0,
+        "any": 8
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "ours",
+    "rows": 512,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 80,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 16,
+    "variant": "xla",
+    "rows": 576,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 144,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 16,
+    "variant": "official",
+    "rows": 576,
+    "out_of_range": 0,
+    "duplicate": 16,
+    "unpaired_bits": 198,
+    "wrong_bits": 190,
+    "any": 206,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 22,
+        "wrong_bits": 22,
+        "any": 22
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 104,
+        "wrong_bits": 104,
+        "any": 112
+      },
+      "phase_count": {
+        "rows": 144,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 8,
+        "wrong_bits": 0,
+        "any": 8
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 16,
+    "variant": "ours",
+    "rows": 576,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 144,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "xla",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "official",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 16,
+    "unpaired_bits": 198,
+    "wrong_bits": 190,
+    "any": 206,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 22,
+        "wrong_bits": 22,
+        "any": 22
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 104,
+        "wrong_bits": 104,
+        "any": 112
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 8,
+        "wrong_bits": 0,
+        "any": 8
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "ours",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 128,
+    "variant": "xla",
+    "rows": 1464,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1032,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 128,
+    "variant": "official",
+    "rows": 1464,
+    "out_of_range": 0,
+    "duplicate": 80,
+    "unpaired_bits": 215,
+    "wrong_bits": 207,
+    "any": 223,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 39,
+        "wrong_bits": 39,
+        "any": 39
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 64,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 104,
+        "wrong_bits": 104,
+        "any": 112
+      },
+      "phase_count": {
+        "rows": 1032,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 8,
+        "wrong_bits": 0,
+        "any": 8
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 128,
+    "variant": "ours",
+    "rows": 1464,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1032,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      1,
+      100
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "xla",
+    "rows": 64,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 21,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 10,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 1,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      1,
+      100
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "official",
+    "rows": 64,
+    "out_of_range": 2,
+    "duplicate": 2,
+    "unpaired_bits": 25,
+    "wrong_bits": 24,
+    "any": 26,
+    "distributions": {
+      "normal": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 3,
+        "wrong_bits": 3,
+        "any": 3
+      },
+      "special": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 8,
+        "wrong_bits": 8,
+        "any": 8
+      },
+      "ties": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 21,
+        "out_of_range": 1,
+        "duplicate": 1,
+        "unpaired_bits": 13,
+        "wrong_bits": 13,
+        "any": 14
+      },
+      "phase_count": {
+        "rows": 10,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 1,
+        "out_of_range": 1,
+        "duplicate": 1,
+        "unpaired_bits": 1,
+        "wrong_bits": 0,
+        "any": 1
+      }
+    }
+  },
+  {
+    "shape": [
+      1,
+      100
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "ours",
+    "rows": 64,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 21,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 10,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 1,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      3,
+      17
+    ],
+    "axis": 1,
+    "k": 17,
+    "variant": "xla",
+    "rows": 216,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 63,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 54,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 3,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      3,
+      17
+    ],
+    "axis": 1,
+    "k": 17,
+    "variant": "official",
+    "rows": 216,
+    "out_of_range": 18,
+    "duplicate": 11,
+    "unpaired_bits": 69,
+    "wrong_bits": 66,
+    "any": 72,
+    "distributions": {
+      "normal": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 3,
+        "wrong_bits": 3,
+        "any": 3
+      },
+      "special": {
+        "rows": 24,
+        "out_of_range": 12,
+        "duplicate": 5,
+        "unpaired_bits": 24,
+        "wrong_bits": 24,
+        "any": 24
+      },
+      "ties": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 63,
+        "out_of_range": 3,
+        "duplicate": 3,
+        "unpaired_bits": 39,
+        "wrong_bits": 39,
+        "any": 42
+      },
+      "phase_count": {
+        "rows": 54,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 3,
+        "out_of_range": 3,
+        "duplicate": 3,
+        "unpaired_bits": 3,
+        "wrong_bits": 0,
+        "any": 3
+      }
+    }
+  },
+  {
+    "shape": [
+      3,
+      17
+    ],
+    "axis": 1,
+    "k": 17,
+    "variant": "ours",
+    "rows": 216,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 24,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 63,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 54,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 3,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      1
+    ],
+    "axis": 1,
+    "k": 1,
+    "variant": "xla",
+    "rows": 448,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      1
+    ],
+    "axis": 1,
+    "k": 1,
+    "variant": "official",
+    "rows": 448,
+    "out_of_range": 8,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 8,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 8,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 8
+      },
+      "phase_count": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      1
+    ],
+    "axis": 1,
+    "k": 1,
+    "variant": "ours",
+    "rows": 448,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      16,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "xla",
+    "rows": 1024,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 336,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 160,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      16,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "official",
+    "rows": 1024,
+    "out_of_range": 0,
+    "duplicate": 32,
+    "unpaired_bits": 393,
+    "wrong_bits": 377,
+    "any": 409,
+    "distributions": {
+      "normal": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 41,
+        "wrong_bits": 41,
+        "any": 41
+      },
+      "special": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 128,
+        "wrong_bits": 128,
+        "any": 128
+      },
+      "ties": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 336,
+        "out_of_range": 0,
+        "duplicate": 16,
+        "unpaired_bits": 208,
+        "wrong_bits": 208,
+        "any": 224
+      },
+      "phase_count": {
+        "rows": 160,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 16,
+        "unpaired_bits": 16,
+        "wrong_bits": 0,
+        "any": 16
+      }
+    }
+  },
+  {
+    "shape": [
+      16,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "ours",
+    "rows": 1024,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 336,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 160,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      16,
+      128
+    ],
+    "axis": 1,
+    "k": 16,
+    "variant": "xla",
+    "rows": 1152,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 336,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 288,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      16,
+      128
+    ],
+    "axis": 1,
+    "k": 16,
+    "variant": "official",
+    "rows": 1152,
+    "out_of_range": 0,
+    "duplicate": 32,
+    "unpaired_bits": 401,
+    "wrong_bits": 385,
+    "any": 417,
+    "distributions": {
+      "normal": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 49,
+        "wrong_bits": 49,
+        "any": 49
+      },
+      "special": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 128,
+        "wrong_bits": 128,
+        "any": 128
+      },
+      "ties": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 336,
+        "out_of_range": 0,
+        "duplicate": 16,
+        "unpaired_bits": 208,
+        "wrong_bits": 208,
+        "any": 224
+      },
+      "phase_count": {
+        "rows": 288,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 16,
+        "unpaired_bits": 16,
+        "wrong_bits": 0,
+        "any": 16
+      }
+    }
+  },
+  {
+    "shape": [
+      16,
+      128
+    ],
+    "axis": 1,
+    "k": 16,
+    "variant": "ours",
+    "rows": 1152,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 336,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 288,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      40,
+      128
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "xla",
+    "rows": 3520,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 840,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1360,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 40,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      40,
+      128
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "official",
+    "rows": 3520,
+    "out_of_range": 0,
+    "duplicate": 80,
+    "unpaired_bits": 1012,
+    "wrong_bits": 972,
+    "any": 1052,
+    "distributions": {
+      "normal": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 132,
+        "wrong_bits": 132,
+        "any": 132
+      },
+      "special": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 320,
+        "wrong_bits": 320,
+        "any": 320
+      },
+      "ties": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 840,
+        "out_of_range": 0,
+        "duplicate": 40,
+        "unpaired_bits": 520,
+        "wrong_bits": 520,
+        "any": 560
+      },
+      "phase_count": {
+        "rows": 1360,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 40,
+        "out_of_range": 0,
+        "duplicate": 40,
+        "unpaired_bits": 40,
+        "wrong_bits": 0,
+        "any": 40
+      }
+    }
+  },
+  {
+    "shape": [
+      40,
+      128
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "ours",
+    "rows": 3520,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 320,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 840,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1360,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 40,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      64,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "xla",
+    "rows": 4096,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 1344,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 640,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      64,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "official",
+    "rows": 4096,
+    "out_of_range": 0,
+    "duplicate": 128,
+    "unpaired_bits": 1612,
+    "wrong_bits": 1548,
+    "any": 1676,
+    "distributions": {
+      "normal": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 204,
+        "wrong_bits": 204,
+        "any": 204
+      },
+      "special": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 512,
+        "wrong_bits": 512,
+        "any": 512
+      },
+      "ties": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 1344,
+        "out_of_range": 0,
+        "duplicate": 64,
+        "unpaired_bits": 832,
+        "wrong_bits": 832,
+        "any": 896
+      },
+      "phase_count": {
+        "rows": 640,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 64,
+        "unpaired_bits": 64,
+        "wrong_bits": 0,
+        "any": 64
+      }
+    }
+  },
+  {
+    "shape": [
+      64,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "ours",
+    "rows": 4096,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 512,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 1344,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 640,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      70,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "xla",
+    "rows": 4480,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 1470,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 700,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 70,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      70,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "official",
+    "rows": 4480,
+    "out_of_range": 0,
+    "duplicate": 140,
+    "unpaired_bits": 1757,
+    "wrong_bits": 1687,
+    "any": 1827,
+    "distributions": {
+      "normal": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 217,
+        "wrong_bits": 217,
+        "any": 217
+      },
+      "special": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 560,
+        "wrong_bits": 560,
+        "any": 560
+      },
+      "ties": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 1470,
+        "out_of_range": 0,
+        "duplicate": 70,
+        "unpaired_bits": 910,
+        "wrong_bits": 910,
+        "any": 980
+      },
+      "phase_count": {
+        "rows": 700,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 70,
+        "out_of_range": 0,
+        "duplicate": 70,
+        "unpaired_bits": 70,
+        "wrong_bits": 0,
+        "any": 70
+      }
+    }
+  },
+  {
+    "shape": [
+      70,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "ours",
+    "rows": 4480,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 1470,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 700,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 70,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      96,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "xla",
+    "rows": 6144,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2016,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 960,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 96,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      96,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "official",
+    "rows": 6144,
+    "out_of_range": 0,
+    "duplicate": 192,
+    "unpaired_bits": 2429,
+    "wrong_bits": 2333,
+    "any": 2525,
+    "distributions": {
+      "normal": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 317,
+        "wrong_bits": 317,
+        "any": 317
+      },
+      "special": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 768,
+        "wrong_bits": 768,
+        "any": 768
+      },
+      "ties": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2016,
+        "out_of_range": 0,
+        "duplicate": 96,
+        "unpaired_bits": 1248,
+        "wrong_bits": 1248,
+        "any": 1344
+      },
+      "phase_count": {
+        "rows": 960,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 96,
+        "out_of_range": 0,
+        "duplicate": 96,
+        "unpaired_bits": 96,
+        "wrong_bits": 0,
+        "any": 96
+      }
+    }
+  },
+  {
+    "shape": [
+      96,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "ours",
+    "rows": 6144,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 768,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2016,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 960,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 96,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      128,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "xla",
+    "rows": 8192,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1280,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      128,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "official",
+    "rows": 8192,
+    "out_of_range": 0,
+    "duplicate": 256,
+    "unpaired_bits": 3197,
+    "wrong_bits": 3069,
+    "any": 3325,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 381,
+        "wrong_bits": 381,
+        "any": 381
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 1024,
+        "wrong_bits": 1024,
+        "any": 1024
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 128,
+        "unpaired_bits": 1664,
+        "wrong_bits": 1664,
+        "any": 1792
+      },
+      "phase_count": {
+        "rows": 1280,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 128,
+        "unpaired_bits": 128,
+        "wrong_bits": 0,
+        "any": 128
+      }
+    }
+  },
+  {
+    "shape": [
+      128,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "ours",
+    "rows": 8192,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1280,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      256,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "xla",
+    "rows": 16384,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 5376,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 2560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 256,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      256,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "official",
+    "rows": 16384,
+    "out_of_range": 0,
+    "duplicate": 512,
+    "unpaired_bits": 6437,
+    "wrong_bits": 6181,
+    "any": 6693,
+    "distributions": {
+      "normal": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 805,
+        "wrong_bits": 805,
+        "any": 805
+      },
+      "special": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 2048,
+        "wrong_bits": 2048,
+        "any": 2048
+      },
+      "ties": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 5376,
+        "out_of_range": 0,
+        "duplicate": 256,
+        "unpaired_bits": 3328,
+        "wrong_bits": 3328,
+        "any": 3584
+      },
+      "phase_count": {
+        "rows": 2560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 256,
+        "out_of_range": 0,
+        "duplicate": 256,
+        "unpaired_bits": 256,
+        "wrong_bits": 0,
+        "any": 256
+      }
+    }
+  },
+  {
+    "shape": [
+      256,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "ours",
+    "rows": 16384,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 5376,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 2560,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 256,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      256
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "xla",
+    "rows": 512,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 80,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      256
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "official",
+    "rows": 512,
+    "out_of_range": 0,
+    "duplicate": 16,
+    "unpaired_bits": 210,
+    "wrong_bits": 210,
+    "any": 226,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 42,
+        "wrong_bits": 42,
+        "any": 42
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 104,
+        "wrong_bits": 104,
+        "any": 112
+      },
+      "phase_count": {
+        "rows": 80,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 8
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      256
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "ours",
+    "rows": 512,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 80,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      300
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "xla",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      300
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "official",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 16,
+    "unpaired_bits": 214,
+    "wrong_bits": 214,
+    "any": 230,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 46,
+        "wrong_bits": 46,
+        "any": 46
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 104,
+        "wrong_bits": 104,
+        "any": 112
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 8
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      300
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "ours",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      1024
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "xla",
+    "rows": 512,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 80,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      1024
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "official",
+    "rows": 512,
+    "out_of_range": 0,
+    "duplicate": 16,
+    "unpaired_bits": 231,
+    "wrong_bits": 231,
+    "any": 247,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 63,
+        "wrong_bits": 63,
+        "any": 63
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 104,
+        "wrong_bits": 104,
+        "any": 112
+      },
+      "phase_count": {
+        "rows": 80,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 8
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      1024
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "ours",
+    "rows": 512,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 80,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      4096
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "xla",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      4096
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "official",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 16,
+    "unpaired_bits": 232,
+    "wrong_bits": 232,
+    "any": 248,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 104,
+        "wrong_bits": 104,
+        "any": 112
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 8
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      4096
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "ours",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      8192
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "xla",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      8192
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "official",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 16,
+    "unpaired_bits": 232,
+    "wrong_bits": 232,
+    "any": 248,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 64,
+        "wrong_bits": 64,
+        "any": 64
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 104,
+        "wrong_bits": 104,
+        "any": 112
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 8,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 8
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      8192
+    ],
+    "axis": 1,
+    "k": 32,
+    "variant": "ours",
+    "rows": 704,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 64,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 168,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 272,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 8,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 0,
+    "k": 8,
+    "variant": "xla",
+    "rows": 8064,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1152,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 0,
+    "k": 8,
+    "variant": "official",
+    "rows": 8064,
+    "out_of_range": 0,
+    "duplicate": 2442,
+    "unpaired_bits": 2873,
+    "wrong_bits": 2745,
+    "any": 3001,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 23,
+        "unpaired_bits": 57,
+        "wrong_bits": 57,
+        "any": 57
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 1011,
+        "unpaired_bits": 1024,
+        "wrong_bits": 1024,
+        "any": 1024
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 1280,
+        "unpaired_bits": 1664,
+        "wrong_bits": 1664,
+        "any": 1792
+      },
+      "phase_count": {
+        "rows": 1152,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 128,
+        "unpaired_bits": 128,
+        "wrong_bits": 0,
+        "any": 128
+      }
+    }
+  },
+  {
+    "shape": [
+      8,
+      128
+    ],
+    "axis": 0,
+    "k": 8,
+    "variant": "ours",
+    "rows": 8064,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1152,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      16,
+      128
+    ],
+    "axis": 0,
+    "k": 8,
+    "variant": "xla",
+    "rows": 8192,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1280,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      16,
+      128
+    ],
+    "axis": 0,
+    "k": 8,
+    "variant": "official",
+    "rows": 8192,
+    "out_of_range": 0,
+    "duplicate": 2171,
+    "unpaired_bits": 2902,
+    "wrong_bits": 2774,
+    "any": 3030,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 86,
+        "wrong_bits": 86,
+        "any": 86
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 763,
+        "unpaired_bits": 1024,
+        "wrong_bits": 1024,
+        "any": 1024
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 1280,
+        "unpaired_bits": 1664,
+        "wrong_bits": 1664,
+        "any": 1792
+      },
+      "phase_count": {
+        "rows": 1280,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 128,
+        "unpaired_bits": 128,
+        "wrong_bits": 0,
+        "any": 128
+      }
+    }
+  },
+  {
+    "shape": [
+      16,
+      128
+    ],
+    "axis": 0,
+    "k": 8,
+    "variant": "ours",
+    "rows": 8192,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1280,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      24,
+      128
+    ],
+    "axis": 0,
+    "k": 8,
+    "variant": "xla",
+    "rows": 8192,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1280,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      24,
+      128
+    ],
+    "axis": 0,
+    "k": 8,
+    "variant": "official",
+    "rows": 8192,
+    "out_of_range": 0,
+    "duplicate": 2021,
+    "unpaired_bits": 2922,
+    "wrong_bits": 2794,
+    "any": 3050,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 106,
+        "wrong_bits": 106,
+        "any": 106
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 613,
+        "unpaired_bits": 1024,
+        "wrong_bits": 1024,
+        "any": 1024
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 1280,
+        "unpaired_bits": 1664,
+        "wrong_bits": 1664,
+        "any": 1792
+      },
+      "phase_count": {
+        "rows": 1280,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 128,
+        "unpaired_bits": 128,
+        "wrong_bits": 0,
+        "any": 128
+      }
+    }
+  },
+  {
+    "shape": [
+      24,
+      128
+    ],
+    "axis": 0,
+    "k": 8,
+    "variant": "ours",
+    "rows": 8192,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 1280,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      33,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "xla",
+    "rows": 11264,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      33,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "official",
+    "rows": 11264,
+    "out_of_range": 1290,
+    "duplicate": 2497,
+    "unpaired_bits": 3025,
+    "wrong_bits": 2897,
+    "any": 3153,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 65,
+        "unpaired_bits": 209,
+        "wrong_bits": 209,
+        "any": 209
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 138,
+        "duplicate": 1024,
+        "unpaired_bits": 1024,
+        "wrong_bits": 1024,
+        "any": 1024
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 1152,
+        "duplicate": 1280,
+        "unpaired_bits": 1664,
+        "wrong_bits": 1664,
+        "any": 1792
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 128,
+        "unpaired_bits": 128,
+        "wrong_bits": 0,
+        "any": 128
+      }
+    }
+  },
+  {
+    "shape": [
+      33,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "ours",
+    "rows": 11264,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      64,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "xla",
+    "rows": 11264,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      64,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "official",
+    "rows": 11264,
+    "out_of_range": 0,
+    "duplicate": 2428,
+    "unpaired_bits": 3108,
+    "wrong_bits": 2980,
+    "any": 3236,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 292,
+        "wrong_bits": 292,
+        "any": 292
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 1020,
+        "unpaired_bits": 1024,
+        "wrong_bits": 1024,
+        "any": 1024
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 1280,
+        "unpaired_bits": 1664,
+        "wrong_bits": 1664,
+        "any": 1792
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 128,
+        "unpaired_bits": 128,
+        "wrong_bits": 0,
+        "any": 128
+      }
+    }
+  },
+  {
+    "shape": [
+      64,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "ours",
+    "rows": 11264,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      128,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "xla",
+    "rows": 11264,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      128,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "official",
+    "rows": 11264,
+    "out_of_range": 0,
+    "duplicate": 2390,
+    "unpaired_bits": 3210,
+    "wrong_bits": 3082,
+    "any": 3338,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 394,
+        "wrong_bits": 394,
+        "any": 394
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 982,
+        "unpaired_bits": 1024,
+        "wrong_bits": 1024,
+        "any": 1024
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 1280,
+        "unpaired_bits": 1664,
+        "wrong_bits": 1664,
+        "any": 1792
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 128,
+        "unpaired_bits": 128,
+        "wrong_bits": 0,
+        "any": 128
+      }
+    }
+  },
+  {
+    "shape": [
+      128,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "ours",
+    "rows": 11264,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      256,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "xla",
+    "rows": 11264,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      256,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "official",
+    "rows": 11264,
+    "out_of_range": 0,
+    "duplicate": 2384,
+    "unpaired_bits": 3468,
+    "wrong_bits": 3340,
+    "any": 3596,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 652,
+        "wrong_bits": 652,
+        "any": 652
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 976,
+        "unpaired_bits": 1024,
+        "wrong_bits": 1024,
+        "any": 1024
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 1280,
+        "unpaired_bits": 1664,
+        "wrong_bits": 1664,
+        "any": 1792
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 128,
+        "unpaired_bits": 128,
+        "wrong_bits": 0,
+        "any": 128
+      }
+    }
+  },
+  {
+    "shape": [
+      256,
+      128
+    ],
+    "axis": 0,
+    "k": 32,
+    "variant": "ours",
+    "rows": 11264,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 2688,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 4352,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      2,
+      8,
+      128
+    ],
+    "axis": 2,
+    "k": 8,
+    "variant": "xla",
+    "rows": 1024,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 336,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 160,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      2,
+      8,
+      128
+    ],
+    "axis": 2,
+    "k": 8,
+    "variant": "official",
+    "rows": 1024,
+    "out_of_range": 0,
+    "duplicate": 32,
+    "unpaired_bits": 407,
+    "wrong_bits": 391,
+    "any": 423,
+    "distributions": {
+      "normal": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 55,
+        "wrong_bits": 55,
+        "any": 55
+      },
+      "special": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 128,
+        "wrong_bits": 128,
+        "any": 128
+      },
+      "ties": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 336,
+        "out_of_range": 0,
+        "duplicate": 16,
+        "unpaired_bits": 208,
+        "wrong_bits": 208,
+        "any": 224
+      },
+      "phase_count": {
+        "rows": 160,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 16,
+        "unpaired_bits": 16,
+        "wrong_bits": 0,
+        "any": 16
+      }
+    }
+  },
+  {
+    "shape": [
+      2,
+      8,
+      128
+    ],
+    "axis": 2,
+    "k": 8,
+    "variant": "ours",
+    "rows": 1024,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 128,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 336,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 160,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 16,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      2,
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "xla",
+    "rows": 16128,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 5376,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 2304,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 256,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      2,
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "official",
+    "rows": 16128,
+    "out_of_range": 0,
+    "duplicate": 4894,
+    "unpaired_bits": 5757,
+    "wrong_bits": 5501,
+    "any": 6013,
+    "distributions": {
+      "normal": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 59,
+        "unpaired_bits": 125,
+        "wrong_bits": 125,
+        "any": 125
+      },
+      "special": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 2019,
+        "unpaired_bits": 2048,
+        "wrong_bits": 2048,
+        "any": 2048
+      },
+      "ties": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 5376,
+        "out_of_range": 0,
+        "duplicate": 2560,
+        "unpaired_bits": 3328,
+        "wrong_bits": 3328,
+        "any": 3584
+      },
+      "phase_count": {
+        "rows": 2304,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 256,
+        "out_of_range": 0,
+        "duplicate": 256,
+        "unpaired_bits": 256,
+        "wrong_bits": 0,
+        "any": 256
+      }
+    }
+  },
+  {
+    "shape": [
+      2,
+      8,
+      128
+    ],
+    "axis": 1,
+    "k": 8,
+    "variant": "ours",
+    "rows": 16128,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 2048,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 5376,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 2304,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 256,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      2,
+      8,
+      128
+    ],
+    "axis": 0,
+    "k": 2,
+    "variant": "xla",
+    "rows": 58368,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 21504,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 3072,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      2,
+      8,
+      128
+    ],
+    "axis": 0,
+    "k": 2,
+    "variant": "official",
+    "rows": 58368,
+    "out_of_range": 0,
+    "duplicate": 13992,
+    "unpaired_bits": 20558,
+    "wrong_bits": 20421,
+    "any": 21593,
+    "distributions": {
+      "normal": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 39,
+        "unpaired_bits": 138,
+        "wrong_bits": 138,
+        "any": 138
+      },
+      "special": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 3713,
+        "unpaired_bits": 7108,
+        "wrong_bits": 6971,
+        "any": 7119
+      },
+      "ties": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 21504,
+        "out_of_range": 0,
+        "duplicate": 10240,
+        "unpaired_bits": 13312,
+        "wrong_bits": 13312,
+        "any": 14336
+      },
+      "phase_count": {
+        "rows": 3072,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  },
+  {
+    "shape": [
+      2,
+      8,
+      128
+    ],
+    "axis": 0,
+    "k": 2,
+    "variant": "ours",
+    "rows": 58368,
+    "out_of_range": 0,
+    "duplicate": 0,
+    "unpaired_bits": 0,
+    "wrong_bits": 0,
+    "any": 0,
+    "distributions": {
+      "normal": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "bits": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "special": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "ties": {
+        "rows": 8192,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "constant": {
+        "rows": 21504,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "phase_count": {
+        "rows": 3072,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      },
+      "finite_at_last": {
+        "rows": 1024,
+        "out_of_range": 0,
+        "duplicate": 0,
+        "unpaired_bits": 0,
+        "wrong_bits": 0,
+        "any": 0
+      }
+    }
+  }
+]

@@ -1,0 +1,12 @@
+$ tpu_op_probe.py gather_lanes
+compiled; instructions: vld.8x128, vperm.0.8x128, vpop.8x128, vst.8x128 | correct: True
+$ tpu_op_probe.py gather_sublanes
+FAILED: INTERNAL: Mosaic failed to compile TPU kernel with MLIR module name `tpu_op_probe` HLO name `tpu_op_probe.1`: Sublane gather not supported by this TPU generation | at location: loc("tpu_value_probe:"("tpu_value_probe"("main.<locals>.function.<locals>.kernel"("/srv/workspace/pallas-ecosystem/pallas-tpu-readings-dev/top_k_
+$ tpu_op_probe.py gather_sublanes allow_sublane_gather
+compiled; instructions: vld.8x128, vld.iar0.8x128, vsetiar.raw, vst.8x128 | correct: True
+$ tpu_op_probe.py static_gather
+compiled; instructions: vld.8x128, vld.sshfl.8x128, vst.8x128 | correct: True
+$ tpu_op_probe.py sublane_shuffle
+FAILED: INTERNAL: Mosaic failed to compile TPU kernel with MLIR module name `tpu_op_probe` HLO name `tpu_op_probe.1`: Not implemented: Unsupported operation: tpu.sublane_shuffle in infer-vector-layout pass | The MLIR operation involved:
+$ tpu_op_probe.py load_idx
+FAILED: INTERNAL: Mosaic failed to compile TPU kernel with MLIR module name `tpu_op_probe` HLO name `tpu_op_probe.1`: Not implemented: Unsupported operation: tpu.vector_load_idx in infer-vector-layout pass | The MLIR operation involved:

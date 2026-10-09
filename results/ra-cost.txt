@@ -1,0 +1,4 @@
+$ ra_cost.py 8 8
+register pressure: vregs is 40; total scheduled bundles: {'packed-bundles-pre-ra': 520, 'packed-bundles-no-ra-deps': 515, 'packed-bundles-no-spills-fills': 515, 'packed-bundles-post-ra': 517}; measured compute cycles [510]
+$ ra_cost.py 32 8
+register pressure: vmregs is 9, vregs is 165; total scheduled bundles: {'packed-bundles-pre-ra': 1010, 'packed-bundles-no-ra-deps': 1045, 'packed-bundles-no-spills-fills': 1109, 'packed-bundles-post-ra': 1238}; measured compute cycles [1381]

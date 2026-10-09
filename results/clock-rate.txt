@@ -1,0 +1,14 @@
+# 第一次运行（当时还没有 GTC 部分）
+timeline: 200 calls over 20.232 s, 21243004628 cycles; LCC rate 1049.9887 to 1050.0094 MHz (envelope width 19.7 ppm), fit of midpoints 1049.9993 MHz
+n = 10000000: 90000855 cycles, median host time 85.905 ms over 8 calls (range 85.892 to 85.919 ms)
+n = 100000000: 900000854 cycles, median host time 857.425 ms over 8 calls (range 857.406 to 857.474 ms)
+difference: LCC rate 1049.8759 MHz
+
+# 第二次运行
+timeline: 200 calls over 20.226 s, 21236948116 cycles; LCC rate 1049.9893 to 1050.0099 MHz (envelope width 19.6 ppm), fit of midpoints 1049.9993 MHz
+n = 10000000: 90000855 cycles, median host time 85.900 ms over 8 calls (range 85.889 to 85.911 ms)
+n = 100000000: 900000854 cycles, median host time 857.360 ms over 8 calls (range 857.352 to 857.381 ms)
+difference: LCC rate 1049.9579 MHz
+GTC: delay 1000, cycles between the two GTC reads [1013], GTC difference [10800, 10801, 10815], ratio 10.6614018 (32/3 = 10.6666667)
+GTC: delay 1000000, cycles between the two GTC reads [1000013], GTC difference [10666800, 10666801, 10666815], ratio 10.6666613 (32/3 = 10.6666667)
+GTC: delay 100000000, cycles between the two GTC reads [100000013], GTC difference [1066666800, 1066666801, 1066666815], ratio 10.6666666 (32/3 = 10.6666667)

@@ -1,0 +1,8 @@
+$ llo_op_probe.py result_only
+result_only  FAILED: INTERNAL: Mosaic failed to compile TPU kernel with MLIR module name `front_probe` HLO name `front_probe.1`: Not implemented: Unsupported operation: llo.vlaneseq in infer-vector-layout pass
+$ llo_op_probe.py operand_and_result
+operand_and_result  FAILED: INTERNAL: Mosaic failed to compile TPU kernel with MLIR module name `front_probe` HLO name `front_probe.1`: Not implemented: Unsupported operation: llo.sublane_reverse in infer-vector-layout pass
+$ llo_op_probe.py transpose b32
+transpose b32 FAILED: INTERNAL: Mosaic failed to compile TPU kernel with MLIR module name `front_probe` HLO name `front_probe.1`: Not implemented: Unsupported operation: llo.vxpose in infer-vector-layout pass
+$ llo_op_probe.py transpose segmented_b32
+transpose segmented_b32 FAILED: INVALID_ARGUMENT: Failed to parse the Mosaic module: #llo.vxpose_mode<segmented_b32>:1:18: error: expected ::mlir::llo::VxposeMode to be one of: b32, b16.c, b8.c | #llo.vxpose_mode<segmented_b32>:1:18: note: in bytecode version 0 produced by: MLIR24.0.0git

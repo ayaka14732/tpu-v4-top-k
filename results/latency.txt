@@ -1,0 +1,31 @@
+empty: R2 - R0 = [13], bundles = 0
+16 vnop: R2 - R0 = [29], bundles = 16
+16 dependent vadd: R2 - R0 = [29], bundles = 16
+16 dependent vrot.slane.down: R2 - R0 = [43], bundles = 16
+8 x (vgt, vsel on that mask): R2 - R0 = [29], bundles = 16
+vmax.xlane, 1 push 1 pop: R2 - R0 = [92], bundles = 2
+vmax.index.xlane, 1 push 1 pop: R2 - R0 = [92], bundles = 2
+vadd.xlane, 1 push 1 pop: R2 - R0 = [92], bundles = 2
+vmax.xlane, 2 pushes 2 pops on one queue: R2 - R0 = [100], bundles = 4
+vmax.xlane, 8 pushes 8 pops on one queue: R2 - R0 = [148], bundles = 16
+vmax.xlane, 16 pushes 16 pops on two queues: R2 - R0 = [148], bundles = 16
+vrot, 1 push 1 pop: R2 - R0 = [82], bundles = 2
+vrot, 8 pushes 8 pops on unit 0: R2 - R0 = [138], bundles = 16
+vrot, 8 pushes alternating units 0 and 2 (same queue): R2 - R0 = [138], bundles = 16
+vrot, 8 pushes alternating units 0 and 1 (two queues): R2 - R0 = [107], bundles = 16
+vrot, 16 pushes on two queues: R2 - R0 = [138], bundles = 16
+vsxpose width 8, 1 push 1 pop: R2 - R0 = [139], bundles = 2
+vsxpose then 16 vrot on two queues: R2 - R0 = [362], bundles = 18
+vsxpose, 80 vnop, then 16 vrot on two queues: R2 - R0 = [362], bundles = 98
+vsxpose on unit 0, then 4 vrot on unit 0: R2 - R0 = [330], bundles = 10
+vsxpose on unit 0, then 4 vrot on unit 1: R2 - R0 = [233], bundles = 10
+vsxpose on unit 0, 100 vnop, then 4 vrot on unit 0: R2 - R0 = [333], bundles = 110
+two vsxpose on unit 0: R2 - R0 = [267], bundles = 4
+two vsxpose on units 0 and 1 (two queues): R2 - R0 = [140], bundles = 4
+four vsxpose on unit 0: R2 - R0 = [523], bundles = 8
+8 x (vst tile A, vld tile A): R2 - R0 = [77], bundles = 16
+8 x (vst tile A, vld tile B): R2 - R0 = [29], bundles = 16
+8 x (vsetiar, vld.iar): R2 - R0 = [60], bundles = 16
+8 x (vst tile B, vld.iar tile A): R2 - R0 = [61], bundles = 16
+8 x vld.iar tile A: R2 - R0 = [21], bundles = 8
+vxpose width 128, 1 push 16 pops: (R1 - R0 after the first pop, R2 - R0 after all) = [(139, 264)]

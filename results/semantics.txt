@@ -1,0 +1,4 @@
+fold: 4 random inputs, 0 of 4096 elements differ from the model
+shuffle: 4 random inputs, 0 of 4096 elements differ from the model
+gather: 4 random inputs, 0 of 4096 elements differ from the model
+scatter: 4 random inputs, 0 of 4096 elements differ from the model

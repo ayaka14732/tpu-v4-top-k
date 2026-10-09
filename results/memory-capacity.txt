@@ -1,0 +1,9 @@
+CMEM A = 0x1000 (2.000 MiB): address A reads Q True; address 0 still P True, became Q False
+CMEM A = 0x20000 (64.000 MiB): address A reads Q True; address 0 still P True, became Q False
+CMEM A = 0x3fff8 (127.996 MiB): address A reads Q True; address 0 still P True, became Q False
+CMEM A = 0x40000 (128.000 MiB): address A reads Q True; address 0 still P False, became Q True
+CMEM A = 0x7fff8 (255.996 MiB): address A reads Q True; address 0 still P True, became Q False
+CMEM A = 0x80000 (256.000 MiB): address A reads Q True; address 0 still P False, became Q True
+TPU_0(process=0,(0,0,0,0)): memory_stats bytes_limit = 32745977856
+TPU_1(process=0,(0,0,0,1)): memory_stats bytes_limit = 32745977856
+get_tpu_info: vmem_capacity_bytes = 16777216, smem_capacity_bytes = 1048576, cmem_capacity_bytes = 67000000, hbm_capacity_bytes = 17200000000
