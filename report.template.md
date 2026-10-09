@@ -287,7 +287,7 @@ expected: [nan  3.  3.  3.  3.  3.  3.  3.]
 ff800001 ffc00001 ffc00002 ffffffff
 ```
 
-NaN 不是一个“比无穷大更大”的统一值。正号 NaN 排在 `+inf` 之前，负号 NaN 排在 `-inf` 之后，同号 NaN 的 payload 也影响顺序；`+0` 排在 `-0` 之前。这就是 IEEE 754 的 `totalOrder` 谓词 [30]：负号 NaN 最小，正号 NaN 最大，−0 排在 +0 之前；同号 NaN 之间，标准只规定 quiet NaN 比 signaling NaN 离零更远，其余留给实现决定，CPU 和原生 XLA 都按位型的大小排列。XLA 比较运算的 `TOTALORDER` 比较类型 [3] 用的也是这个顺序。官方 Pallas 把 NaN 交给 XLU，XLU 把任何 NaN 都当作最大值，负号 NaN 因此被排到最前；每轮的值来自浮点 `max`，payload 也不保证保留。
+NaN 不是一个“比无穷大更大”的统一值。正号 NaN 排在 `+inf` 之前，负号 NaN 排在 `-inf` 之后，同号 NaN 的 payload 也影响顺序；`+0` 排在 `-0` 之前。这就是 IEEE 754 的 `totalOrder` 谓词 [30]：负号 NaN 最小，正号 NaN 最大，−0 排在 +0 之前；同号 NaN 之间，标准只规定 quiet NaN 比 signaling NaN 离零更远，其余留给实现决定，CPU 和原生 XLA 都按位型的大小排列。XLA 的操作语义文档为比较运算规定的全序（`EqTotalOrder` 等）[3] 也是这个顺序：−NaN < −Inf < −有限值 < −0 < +0 < +有限值 < +Inf < +NaN。官方 Pallas 把 NaN 交给 XLU，XLU 把任何 NaN 都当作最大值，负号 NaN 因此被排到最前；每轮的值来自浮点 `max`，payload 也不保证保留。
 
 ### 4.4 本文采用的正确性定义
 
@@ -752,7 +752,7 @@ TPU-KNN [17] 的两阶段近似算法在 Pallas 中也有实现。kernel 中调�
 - **链不一定要拆，可以换它走的路。** 官方的链慢在每一轮要等 XLU，而不在有 k 轮。把数据转置到让每一行占一个通道，每一轮就只剩通道之内的整数比较和按索引读，许多行还能共用同一条指令（6.3 节）。
 - **在折叠后数秩上，编译器与手写的差距主要在排程。** 同一份指令，按真实的时序重排之后就能达到手写的水平。libtpu 的排程器缺的是三样具体的东西：延迟表里转置之后队列的占用，IAR 被当作内存屏障，以及 XLU 队列和 IAR 编号在排程之前就定死。这三条本身与 top-k 无关，但本文只在折叠后数秩这一个 kernel 上量过它们的收益，对别的 kernel 有多大作用还没有验证。
 - **闭源的工具链并不妨碍这类工作，但需要一个能在机器程序上动手的工具。** 指令表、编码器和符号都在公开发行的二进制里，语义和延迟可以在真机上量出来。本文把这些做成了 tpuasm：读清单、改一条指令、插一段片段、装回去运行并读周期数，每一步都不需要重新编译，对照实验因此可以只变一个量（3.1 至 3.3 节）。tpuasm 本身与 top-k 无关；第 7 章的重排工具和第 3 章的延迟测法在设计上也不依赖 top-k，但本文只在 top-k 的几个 kernel 上用过它们。
-- **精确 top-k 与产生得分的矩阵乘相比并不便宜。** 按 TPU v4 公开的峰值 [27] 估算，每个 TC 每周期做 4 × 128 × 128 次 bf16 乘加，产生一块 `[128,128]` 的得分，维度 d = 128 时约需 32 个周期，d = 4096 时约需 1024 个周期；本文对这样一块取前 8 名最快也要 <<tm:128>> 个周期（6.5 节）。所以 TPU-KNN [17] 的判断在它的场景中仍然成立：最近邻搜索的维度小、数据量大，精确选择比矩阵乘贵一个数量级以上，近似算法有它的必要，而近似算法的两个阶段同样可以用本文的写法（8.3 节）。MoE 路由是另一种情形：以 Qwen3-235B-A22B 为例，隐藏维度 4096、128 个专家取前 8 名 [29]，路由的矩阵乘与 top-k 的周期数在同一量级，top-k 的写法直接影响路由 kernel 的耗时，这与 SonicMoE [15] 在 GPU 上观察到的比例一致。这里只是按峰值的估算，本文没有实测完整的路由 kernel。
+- **精确 top-k 与产生得分的矩阵乘相比并不便宜。** 按 TPU v4 公开的峰值 [27] 估算，每个 TC 每周期做 4 × 128 × 128 次 bf16 乘加，产生一块 `[128,128]` 的得分，维度 d = 128 时约需 32 个周期，d = 4096 时约需 1024 个周期；本文对这样一块取前 8 名最快也要 <<tm:128>> 个周期（6.5 节）。所以 TPU-KNN [17] 的判断在它的场景中仍然成立：最近邻搜索的维度小、数据量大，精确选择比矩阵乘贵一个数量级以上，近似算法有它的必要，而近似算法的两个阶段同样可以用本文的写法（8.3 节）。MoE 路由是另一种情形：以 Qwen3-235B-A22B 为例，隐藏维度 4096、128 个专家取前 8 名 [29, 38]，路由的矩阵乘与 top-k 的周期数在同一量级，top-k 的写法直接影响路由 kernel 的耗时，这与 SonicMoE [15] 在 GPU 上观察到的比例一致。这里只是按峰值的估算，本文没有实测完整的路由 kernel。
 - **正确性的定义要从位型出发。** “NaN 当作最大值”“-0 等于 +0”这类数值层面的约定，与原生 XLA 的实际行为并不一致；以位型的全序为定义，特殊值就不再是特例，整数键的比较既简单又不会丢失 NaN。
 
 ### 9.2 给上游的建议
@@ -785,11 +785,11 @@ TPU-KNN [17] 的两阶段近似算法在 Pallas 中也有实现。kernel 中调�
 
 **寄存器内的排序网络。** 比较网络排序与奇偶归并来自 Batcher [4]，本文把它用在不同 TC VREG 的同一位置上，并按前 k 个输出反向裁剪。CPU 的 SIMD 上也有同样的做法：Chhugani 等 [19] 的寄存器内排序先在 K 个寄存器之间逐通道比较，把每个通道内的值排好，再用一串 shuffle 转置；vqsort [20] 先排好各列，再直接用 bitonic 归并合并，省掉转置。5.4 节与 6.3 节先转置、再沿子通道归并的做法与此同源。不同的是，TPU 上的转置要经过 XLU 的往返（表 <<T:lat>>），值不值得转置取决于行数能否分摊这笔固定开销。秩计数是枚举排序 [32] 在循环移位上的实现，败者树来自外部归并 [32]；本文的贡献不在这些算法本身，而在于找出它们在 TPU 上分别受哪一样资源限制，以及怎样借分段转置和按索引读写把它们放到合适的单元上。
 
-**浮点全序与上游问题。** 本文的正确性定义是 IEEE 754 的 `totalOrder` [30]，XLA 比较运算的 `TOTALORDER` 比较类型 [3] 与它一致。Pallas 在并列时 argmax 的行为已有上游 issue [2]，本文补充了多个 lane tile 与沿子通道的规则，并指出 NaN 丢失的问题。
+**浮点全序与上游问题。** 本文的正确性定义是 IEEE 754 的 `totalOrder` [30]，XLA 为比较运算规定的全序 [3] 与它一致。Pallas 在并列时 argmax 的行为已有上游 issue [2]，本文补充了多个 lane tile 与沿子通道的规则，并指出 NaN 丢失的问题。
 
 **指令集逆向与指令级优化。** GPU 厂商同样不公开机器指令集。Jia 等 [21] 用微基准和反汇编得出 Volta 的指令编码、控制信息与延迟，并在二进制层面改写寄存器分配，使一个代表矩阵乘内层循环的 kernel 快了 15.4%；Hayes 等 [22] 系统地解码了多代 NVIDIA GPU 的指令集，并据此生成汇编器。uops.info [23] 用自动生成的微基准测量 x86 指令的延迟、吞吐量和端口占用，以机器可读的形式提供给编译器和性能预测工具，并指出了已有资料中的错误。SIP [24] 和 CuAsmRL [25] 在编译后的 SASS 上搜索更好的指令排程，以实测的运行时间为反馈。为 GPU 编写汇编器以便在机器程序上直接调优，也有 KeplerAs [34]、maxas [35]、TuringAs [36] 等先例。在 TPU 上，Kaufman 等 [37] 用学习的方法从 XLA 的程序图预测 kernel 的耗时，服务于 tile 大小和融合的选择，粒度是整个 kernel，不涉及指令级的延迟。本文在 TPU 上做了对应的几件事。此前观察 TPU 编译结果的手段是编译器自己打印的 LLO 文本，它不能无歧义地对应到机器指令，也不能汇编回去；本文的 tpuasm [5] 直接在机器程序上工作，是本文所有指令级实验的基础（3.1 节）。指令的语义和延迟由真机实验确定（3.2、3.3 节），其中与转置和 IAR 有关的等待，编译器的延迟表里要么没有，要么偏小。编译之后的重排不做搜索，而是按实测延迟建立的时序模型逐周期填 bundle（7.2 节）；7.3 节再把实测的延迟补进编译器自己的延迟表。
 
-**TPU 的体系结构。** TPU 的公开资料只到体系结构层面。Norrie 等 [26] 描述了 TPU v2 的 TensorCore：标量单元取 322 位的 VLIW 指令包，向量单元有 128 个通道、每个通道 8 个子通道，矩阵单元的结果进入 Result FIFO，由专门的取回槽取出，另有一组单元做转置、行归约和列置换。Jouppi 等 [27] 给出了 TPU v4 的参数：每个 TC 有 4 个 MXU 和 16 MiB 的 VMEM，两个 TC 共享 128 MiB 的 CMEM，与附录 C.1 的实测一致。Jouppi 等 [28] 回顾了 TPU v2 至 TPU v7x 五代的演变，认为 TensorCore 的基本结构一直保持稳定（9.3 节）。这些资料没有给出指令的编码、语义和延迟；本文的指令级信息全部来自 libtpu 本身和真机实验。
+**TPU 的体系结构。** TPU 的公开资料只到体系结构层面。Norrie 等 [26] 描述了 TPU v2 的 TensorCore：标量单元取 322 位的 VLIW 指令包（亦见 [28]），向量单元有 128 个通道、每个通道 8 个子通道，矩阵单元的结果进入 Result FIFO，由专门的取回槽取出，另有一组单元做转置、行归约和列置换。Jouppi 等 [27] 给出了 TPU v4 的参数：每个 TC 有 4 个 MXU 和 16 MiB 的 VMEM，两个 TC 共享 128 MiB 的 CMEM，与附录 C.1 的实测一致。Jouppi 等 [28] 回顾了 TPU v2 至 TPU v7x 五代的演变，认为 TensorCore 的基本结构一直保持稳定（9.3 节）。这些资料没有给出指令的编码、语义和延迟；本文的指令级信息全部来自 libtpu 本身和真机实验。
 
 ## 11 结论
 
@@ -811,18 +811,18 @@ TPU-KNN [17] 的两阶段近似算法在 Pallas 中也有实现。kernel 中调�
 8. JAX，Pallas Async Operations：Scheduling，<https://docs.jax.dev/en/latest/pallas/design/async_note.html#scheduling>。
 9. OpenXLA，`xla/hlo/transforms/memory_space_propagation.cc`，<https://github.com/openxla/xla/blob/main/xla/hlo/transforms/memory_space_propagation.cc>。
 10. A. Shanbhag、H. Pirk、S. Madden，Efficient Top-K Query Processing on Massively Parallel Hardware，SIGMOD，2018，<https://doi.org/10.1145/3183713.3183735>。
-11. J. Johnson、M. Douze、H. Jégou，Billion-scale similarity search with GPUs，arXiv:1702.08734，2017，<https://arxiv.org/abs/1702.08734>。
-12. A. Gaihre 等，Dr. Top-k: Delegate-Centric Top-k on GPUs，SC，2021，<https://doi.org/10.1145/3458817.3476141>。
-13. Y. Li 等，RadiK: Scalable and Optimized GPU-Parallel Radix Top-K Selection，ICS，2024，<https://arxiv.org/abs/2501.14336>。
+11. J. Johnson、M. Douze、H. Jégou，Billion-Scale Similarity Search with GPUs，IEEE Transactions on Big Data 7(3)，535–547，2021，<https://doi.org/10.1109/TBDATA.2019.2921572>。
+12. A. Gaihre 等，Dr. Top-k: Delegate-Centric Top-k on GPUs，SC，2021，Article 39，<https://dl.acm.org/doi/10.1145/3458817.3476141>。
+13. Y. Li 等，RadiK: Scalable and Optimized GPU-Parallel Radix Top-K Selection，ICS，2024，537–548，<https://doi.org/10.1145/3650200.3656596>。
 14. X. Xie、Y. Luo、H. Peng、C. Ding，RTop-K: Ultra-Fast Row-Wise Top-K Selection for Neural Network Acceleration on GPUs，ICLR，2025，<https://arxiv.org/abs/2409.00822>。
-15. W. Guo、M. Mishra、X. Cheng、I. Stoica、T. Dao，SonicMoE: Accelerating MoE with IO and Tile-aware Optimizations，arXiv:2512.14080，2025，附录 D，<https://arxiv.org/abs/2512.14080>。
-16. O. Key、L. Ribar、A. Cattaneo、L. Hudlass-Galley、D. Orr，Approximate Top-k for Increased Parallelism，NeurIPS ENLSP-IV Workshop，2024，<https://arxiv.org/abs/2412.04358>。
+15. W. Guo、M. Mishra、X. Cheng、I. Stoica、T. Dao，SonicMoE: Accelerating MoE with IO and Tile-aware Optimizations，ICLR，2026，附录 D，<https://arxiv.org/abs/2512.14080>。
+16. O. Key、L. Ribar、A. Cattaneo、L. Hudlass-Galley、D. Orr，Approximate Top-k for Increased Parallelism，NeurIPS 2024 Workshop on Adaptive Foundation Models，2024，<https://arxiv.org/abs/2412.04358>。
 17. F. Chern 等，TPU-KNN: K Nearest Neighbor Search at Peak FLOP/s，NeurIPS，2022，<https://arxiv.org/abs/2206.14286>。
 18. Y. Samaga B L、V. Yerram、S. R. Babbula、P. Jain、P. Netrapalli，A Faster Generalized Two-Stage Approximate Top-K，TMLR，2026，<https://arxiv.org/abs/2506.04165>。
 19. J. Chhugani 等，Efficient Implementation of Sorting on Multi-Core SIMD CPU Architecture，PVLDB，2008，<https://doi.org/10.14778/1454159.1454171>。
-20. M. Blacher、J. Giesen、P. Sanders、J. Wassenberg，Vectorized and performance-portable Quicksort，arXiv:2205.05982，2022，<https://arxiv.org/abs/2205.05982>。
+20. J. Wassenberg、M. Blacher、J. Giesen、P. Sanders，Vectorized and Performance-Portable Quicksort，Software: Practice and Experience 52(12)，2684–2699，2022，<https://doi.org/10.1002/spe.3142>。
 21. Z. Jia、M. Maggioni、B. Staiger、D. P. Scarpazza，Dissecting the NVIDIA Volta GPU Architecture via Microbenchmarking，技术报告，arXiv:1804.06826，2018，<https://arxiv.org/abs/1804.06826>。
-22. A. B. Hayes 等，Decoding CUDA Binary，CGO，2019，<https://people.cs.rutgers.edu/zz124/assets/pdf/cgo19.pdf>。
+22. A. B. Hayes、F. Hua、J. Huang、Y. Chen、E. Z. Zhang，Decoding CUDA Binary，CGO，2019，229–241，<https://doi.org/10.1109/CGO.2019.8661186>。
 23. A. Abel、J. Reineke，uops.info: Characterizing Latency, Throughput, and Port Usage of Instructions on Intel Microarchitectures，ASPLOS，2019，<https://doi.org/10.1145/3297858.3304062>。
 24. G. He、E. Yoneki，SIP: Autotuning GPU Native Schedules via Stochastic Instruction Perturbation，EuroMLSys，2024，<https://arxiv.org/abs/2403.16863>。
 25. G. He、E. Yoneki，CuAsmRL: Optimizing GPU SASS Schedules via Deep Reinforcement Learning，CGO，2025，<https://arxiv.org/abs/2501.08071>。
@@ -833,11 +833,12 @@ TPU-KNN [17] 的两阶段近似算法在 Pallas 中也有实现。kernel 中调�
 30. IEEE Standard for Floating-Point Arithmetic，IEEE Std 754-2019，§5.10 totalOrder，<https://doi.org/10.1109/IEEESTD.2019.8766229>。
 31. M. Herf，Radix Tricks，2001，<https://stereopsis.com/radix.html>。
 32. D. E. Knuth，The Art of Computer Programming, Volume 3: Sorting and Searching，第 2 版，Addison-Wesley，1998，§5.2（比较计数）与 §5.4.1（败者树）。
-33. J. Zhang、A. Naruse、X. Li、Y. Wang，Parallel Top-K Algorithms on GPU: A Comprehensive Study and New Methods，SC，2023，<https://sc23.supercomputing.org/proceedings/tech_paper/tech_paper_pages/pap294.html>。
-34. X. Zhang、G. Tan、S. Xue、J. Li、K. Zhou、M. Chen，Understanding the GPU Microarchitecture to Achieve Bare-Metal Performance Tuning，PPoPP，2017，31–43。
+33. J. Zhang、A. Naruse、X. Li、Y. Wang，Parallel Top-K Algorithms on GPU: A Comprehensive Study and New Methods，SC，2023，<https://doi.org/10.1145/3581784.3607062>。
+34. X. Zhang、G. Tan、S. Xue、J. Li、K. Zhou、M. Chen，Understanding the GPU Microarchitecture to Achieve Bare-Metal Performance Tuning，PPoPP，2017，31–43，<https://doi.org/10.1145/3018743.3018755>。
 35. Nervana Systems，maxas: Assembler for NVIDIA Maxwell architecture，<https://github.com/NervanaSystems/maxas>。
 36. D. Yan，TuringAs: An open-source SASS assembler for NVIDIA Volta and Turing GPUs，<https://github.com/daadaada/turingas>。
 37. S. J. Kaufman 等，A Learned Performance Model for Tensor Processing Units，MLSys，2021，<https://arxiv.org/abs/2008.01040>。
+38. Qwen Team，Qwen3-235B-A22B 的模型配置 `config.json`，<https://huggingface.co/Qwen/Qwen3-235B-A22B/blob/main/config.json>。
 
 ## 附录 A 环境与复现
 
