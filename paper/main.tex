@@ -1,0 +1,1402 @@
+\documentclass[sigconf,nonacm,balance=false]{acmart}
+
+\usepackage{listings}
+\usepackage{makecell}
+\lstset{basicstyle=\ttfamily\scriptsize, columns=fullflexible, keepspaces=true, breaklines=true, breakatwhitespace=false, showstringspaces=false, upquote=true, frame=none, aboveskip=4pt, belowskip=4pt}
+\newcommand{\code}[1]{\texttt{#1}}
+\setlength{\emergencystretch}{3em}
+
+\begin{document}
+
+\title{Bitwise-Correct and Faster Top-k on TPU v4}
+
+\author{Muhan Zhong}
+\affiliation{%
+  \institution{Independent Researcher}
+  \country{}}
+
+\begin{abstract}
+When top-k is called inside a Pallas kernel on TPU, JAX's official implementation returns duplicate indices if the input contains \code{-inf}, and a source comment states that the behavior is kept on purpose because fixing it would be too expensive. This paper studies in-kernel top-k, where the input is already in on-chip TC VMEM and each row has at most a few thousand elements, and asks whether the result can be both bitwise correct and faster than the official implementation. We define correctness by the IEEE 754 \code{total\allowbreak{}Order}, with which native XLA agrees bit for bit; on 197592 inputs covering special values, the official implementation is wrong on 70706. The fix is cheap: on the basic shape, top 8 of \code{f32[8,\allowbreak{}128]}, it costs only 4.7\%. Beyond that, we choose formulations by three hardware costs: the round-trip latency of the cross-lane unit XLU, the XLU issue interval, and the number of vector ALU instructions. Using only Pallas's existing API, we are faster than the official implementation on 20 of the 25 selected shapes, with a geometric-mean speedup of 1.67$\times$, and faster than native XLA on all of them. On the remaining shapes the official serial chain is already close to the XLU latency, and for them we propose two algorithms, fold-and-rank and a loser-tree merge after a full transpose. Both use segmented-transpose and indexed load/store instructions that the Mosaic compiler does not currently emit, so for now they require rewriting the compiled program or patching libtpu in process; with them, all 24 shapes other than top 1 are faster than the official implementation, with a geometric-mean speedup of 1.79$\times$. The same formulations also apply to Pallas's approximate top-k \code{approx\_\allowbreak{}max\_\allowbreak{}k}, whose second stage calls the official implementation: replacing both of its stages removes all of its errors and makes it faster on 4 of the 5 measured shapes. For fold-and-rank, we wrap the missing instructions as Pallas primitives, add the missing lowerings to libtpu in process, and correct the scheduler's latency table and dependences; the compiled program is then 1\% to 10\% slower than the handwritten one, and after one more reordering pass by measured latencies following the compiler's scheduler it is faster than the handwritten version. To support these instruction-level experiments we built tpuasm, a TPU assembler whose instruction-set information comes entirely from the publicly released libtpu.
+\end{abstract}
+
+\keywords{top-k, TPU, Pallas, JAX, XLA, floating-point total order, loser tree, assembler, instruction scheduling}
+
+\maketitle
+
+{\renewcommand{\thefootnote}{}%
+\footnotetext{Code, raw results, and the Chinese version of this paper: \url{https://github.com/ayaka14732/tpu-v4-top-k}.}%
+\footnotetext{The code, experiments, and text of this paper were produced with Claude Code (Opus 5.5) and Codex (GPT-5.6 Sol, GPT-6 Astra), prompted by Muhan Zhong.}%
+\footnotetext{Research supported with Cloud TPUs from Google's TPU Research Cloud (TRC).}%
+}
+
+\section{Introduction}
+\label{sec:1}
+
+\subsection{Background and Motivation}
+\label{sec:1.1}
+
+Top-k is a common operator in neural networks: MoE routing picks the highest-scoring experts for each token, sampling takes the most probable tokens from the logits, and sparsification methods use it to keep the most important activations. This paper focuses on one class of use: inside a fused TPU kernel, computing top-k row by row over a block of data that is already in on-chip TC VMEM, with a few hundred to a few thousand elements per row and a few to a few hundred rows per block. For example, the MoE layers of Qwen3 select 8 of 128 experts~\cite{qwen3}; when the routing matmul and the top-k are written in the same kernel, the input of the top-k is a \code{[T,\allowbreak{}128]} block with k = 8. Sampling over a whole vocabulary and large-scale selection with k in the thousands are out of scope: their data is far larger than on-chip memory and the main problem is memory traffic; prior work on them is reviewed in Section~\ref{sec:10}.
+
+There are two ready-made ways to compute top-k with JAX on TPU. One is to call \code{jax.\allowbreak{}lax.\allowbreak{}top\_\allowbreak{}k} directly and let XLA compile it; we call this \textbf{native XLA}. The other is to call the same function inside a Pallas kernel, where \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl} in the JAX repository expands it into k rounds of argmax that Mosaic then compiles; we call this \textbf{official Pallas}. The latter lets top-k share data that is already in TC VMEM with the rest of the kernel, and it is the only ready-made formulation Pallas offers when writing a fused kernel.
+
+Exact top-k on GPUs has been studied systematically~\cite{shanbhag2018,johnson2021faiss,gaihre2021drtopk,li2024radik,xie2025rtopk,zhang2023air}; prior work on TPU consists of approximate algorithms~\cite{chern2022tpuknn,samaga2026} that trade recall for parallelism. The TPU instruction set is not public, and published material stops at the architecture level~\cite{norrie2021tpuv2,jouppi2023tpuv4,jouppi2026ironwood}. To our knowledge, no prior work analyzes exact top-k on TPU at the instruction level (Section~\ref{sec:10}).
+
+\subsection{A Comment That Admits an Error}
+\label{sec:1.2}
+
+The official Pallas implementation begins with this comment~\cite{jax-topk-impl}:
+
+\begin{lstlisting}
+# Note: This iterative argmax implementation assumes the input has at least k
+# values distinct from -inf. If the input contains fewer than k values
+# distinct from -inf, all remaining elements will be tied at -inf after
+# masking, which may cause repeated indices in the output. We keep this
+# behavior to avoid adding expensive defensive masking logic.
+\end{lstlisting}
+In other words, the implementation returns duplicate indices on a class of inputs, the authors know it, and they keep the behavior for performance. Such inputs are not rare: \code{-inf} is the standard way to mask logits, and the problem appears whenever a row has fewer than k valid candidates. Native XLA does not have this problem.
+
+\subsection{Research Questions}
+\label{sec:1.3}
+
+The comment implies a judgment: correctness and speed cannot be had together. This paper tests that judgment through three questions.
+
+\begin{itemize}
+\item \textbf{RQ1 Correctness}: What exactly does ``fully correct'' mean? On which inputs is official Pallas wrong? If we only fix it, without trying to be faster, how many cycles does that cost, and does the premise that ``fixing is expensive'' hold? (Section~\ref{sec:4})
+\item \textbf{RQ2 Speed}: While staying bitwise correct, in which cases can we be faster than both official Pallas and native XLA, and what limits each? Where the official formulation is already close to the hardware latency, namely top 8 of \code{f32[8,\allowbreak{}128]} and the case of a middling number of rows with small k, can we still be faster? (Sections~\ref{sec:5} and \ref{sec:6})
+\item \textbf{RQ3 Compiler}: If the speedup depends on instructions that Mosaic does not emit, can we avoid handwriting whole programs and still let the compiler handle shapes, registers, and scheduling? Which layers of the compiler are missing? (Section~\ref{sec:7})
+\end{itemize}
+
+\subsection{Contributions}
+\label{sec:1.4}
+
+Most of the building blocks we use already exist: the definition of correctness is IEEE 754's \code{total\allowbreak{}Order}~\cite{ieee754}, the conditional XOR that turns floating-point bit patterns into comparable integers is a common radix-sort technique~\cite{herf2001radix}, and comparison networks~\cite{batcher1968}, enumeration sort, and loser trees~\cite{knuth1998} are classical algorithms. Our contribution is to find out what constrains each of them on TPU, how to combine them, and how to get the compiler to emit the instructions they need.
+
+\begin{itemize}
+\item \textbf{A definition of correctness and a check for it.} We define correctness by \code{total\allowbreak{}Order}, ordering NaNs of the same sign by bit pattern where the standard leaves the order to the implementation; this matches native XLA and the CPU bit for bit. Under this definition the official implementation's errors go beyond duplicate indices: it also returns values that do not pair with their indices and out-of-range indices, loses NaNs for some data placements, and does not preserve the order of bit patterns. On 197592 inputs covering special values, the official implementation is wrong on 70706, while ours and native XLA have no errors (Section~\ref{sec:4}).
+\item \textbf{The cost of fixing.} XLU reductions accept only f32, so integer keys cannot be sent in directly; we split the keys by sign into two segments, encode each as normal f32 values, and process them in phases on the same chain. Removing duplicate indices alone costs almost nothing; bitwise correctness costs only 4.7\% on the basic shape. The premise that ``fixing is expensive'' does not hold (Section~\ref{sec:4}).
+\item \textbf{Speedups by bottleneck.} Using an analysis framework of three costs, the XLU round-trip latency, the XLU issue interval, and the number of vector ALU instructions, we give formulations for wide rows, the vertical direction, large k, and many rows, together with a general dispatcher. Using only Pallas's existing API, 20 of the 25 measured shapes are already faster than the official implementation, and all of them are faster than native XLA (Section~\ref{sec:5}).
+\item \textbf{Two new algorithms.} Fold-and-rank uses a segmented transpose to move the elements of a row to the sublane direction, reducing the cross-lane work needed for ranking from 127 rotations to 15; the loser-tree merge after a full transpose keeps the k-round dependence but makes each round go only through in-lane integer comparisons and indexed loads. Both use segmented-transpose and indexed load/store instructions that the compiler does not currently emit. With them, all 24 shapes other than top 1 are faster than the official implementation (Section~\ref{sec:6}).
+\item \textbf{Approximate top-k.} Pallas's \code{approx\_\allowbreak{}max\_\allowbreak{}k} first buckets the input and then calls the same top-k on the candidates, and its first stage also loses NaNs. Putting our formulations into both of its stages removes all errors on 2752 inputs and makes 4 of the 5 timed shapes 33\% to 53\% faster than the official version (Section~\ref{sec:8.3}).
+\item \textbf{A path back to the compiler.} For fold-and-rank, we locate layer by layer the entry points missing from the Mosaic compilation pipeline, add them to libtpu in process, and correct the scheduler's latency table and dependences, so that all four instructions are emitted by the compilation pipeline; after reordering by measured latencies following the compiler's scheduler, the compiled program is faster than the handwritten version (Section~\ref{sec:7}). The loser-tree merge is still a handwritten fragment (Section~\ref{sec:7.5}).
+\item \textbf{Tools and methods.} tpuasm, an assembler for TPU instruction bundles whose instruction-set information comes entirely from the publicly released libtpu; on-device experimental methods for determining instruction semantics and latencies; and a method for placing native XLA inside the same TC VMEM timing boundary (Section~\ref{sec:3}).
+\end{itemize}
+
+\subsection{Organization}
+\label{sec:1.5}
+
+Section~\ref{sec:2} introduces the TPU v4 TensorCore, the analysis framework, and how the two baselines work. Section~\ref{sec:3} describes the method and experimental setup: tpuasm, how instruction semantics and latencies are measured, the timing boundary, the measured shapes, correctness verification, and scope and reproducibility. Section~\ref{sec:4} answers RQ1; Section~\ref{sec:5} gives speedups using only Pallas's existing API and Section~\ref{sec:6} gives two new algorithms, which together answer RQ2; Section~\ref{sec:7} answers RQ3. Section~\ref{sec:8} summarizes the results on the 25 shapes, compares the analysis framework with measurements, applies the work to approximate top-k, and reports correctness verification. Section~\ref{sec:9} discusses generalizable findings, recommendations for upstream, and limitations; Section~\ref{sec:10} covers related work, and Section~\ref{sec:11} concludes.
+
+\section{Background}
+\label{sec:2}
+
+\subsection{The TPU v4 TensorCore and Memory Hierarchy}
+\label{sec:2.1}
+
+A TPU v4 chip has two TensorCores (TCs below), which together are called the Megacore. Each TC has its own scalar unit, vector unit, four MXUs for matrix multiplication, and an XLU for cross-lane operations~\cite{norrie2021tpuv2,jouppi2023tpuv4}.
+
+Data passes through four levels of storage from far to near, as shown in Table~\ref{tab:1}. HBM and Megacore Shared CMEM are each a single memory for the whole chip, and both TCs can access all of their addresses. The capacities of HBM and CMEM were measured, as described in Appendix~\ref{sec:C.1}; the capacities of TC VMEM and SMEM are those reported by \code{pltpu.\allowbreak{}get\_\allowbreak{}tpu\_\allowbreak{}info(\allowbreak{})}.
+
+\begin{table*}
+\centering
+\caption{Storage available to one TC of TPU v4.}
+\label{tab:1}
+\footnotesize
+\begin{tabular}{lll>{\raggedright\arraybackslash}p{0.217\linewidth}}
+\toprule
+Storage & Location and ownership & Capacity & Access \\
+\midrule
+HBM & Off chip, shared by the two TCs of a chip & 32 GiB & DMA only \\
+Megacore Shared CMEM & On chip, shared by the two TCs of a chip & 128 MiB & DMA; or \code{cld} into the queue \code{crf}, then \code{vpop} into a TC VREG \\
+TC VMEM & On chip, private to each TC & 16 MiB & \code{vld} and \code{vst} from the vector unit \\
+TC VREG & Private to each TC & 32 registers of 4 KiB & Operands and results of vector instructions \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Program arguments and results live in HBM by default, and XLA often places intermediate arrays in Megacore Shared CMEM. A Pallas kernel can declare an array in TC VMEM and move data in with its own DMAs. This paper is concerned only with computation after the data is already in TC VMEM (Section~\ref{sec:3.5}). In addition, each TC has 1 MiB of scalar memory, SMEM, read and written by the scalar unit; the cycle-counter readings of Section~\ref{sec:3.3} are stored there.
+
+\textbf{Lanes and sublanes.} A TC VREG holds 8 $\times$ 128 32-bit words. The 8 rows are called sublanes and the 128 columns lanes. An elementwise vector instruction does the same thing at all 8 $\times$ 128 positions at once, and the two operands at a position come from the same sublane and the same lane of two registers; to make elements in different lanes or sublanes meet, the data must be moved explicitly, and Section~\ref{sec:2.2} discusses what that costs. TC VMEM is addressed with the same shape: a tile is 8 rows $\times$ 128 words, and one \code{vld} or \code{vst} reads or writes one tile, exactly one TC VREG. Besides the TC VREGs there are 8 mask registers \code{vm0} to \code{vm7}, each 8 $\times$ 128 bits, which hold comparison results and are used for masked stores, and 2 index address registers (IARs), which give each element its own row offset in indexed loads and stores (Section~\ref{sec:3.2}).
+
+\textbf{How arrays map onto TC VREGs.} An \code{f32[8,\allowbreak{}128]} array fits exactly in one TC VREG: row r occupies sublane r and column c occupies lane c. When rows are wider than 128, a row spans several TC VREGs, and each 128 lanes form a lane tile; when there are more than 8 rows, every 8 rows form one TC VREG. This is one of XLA's layouts, written \code{\{1,\allowbreak{}0:T(\allowbreak{}8,\allowbreak{}128)\}} in HLO (Section~\ref{sec:3.4}), and it is the layout Pallas kernels use for two-dimensional f32 arrays in TC VMEM. So when top-k is taken along the last dimension, the elements to compare lie in different lanes of the same sublane; along the first dimension, they lie in different sublanes of the same lane.
+
+\textbf{Instruction bundles.} A TC executes VLIW instruction bundles: a bundle contains several instructions, each occupying a fixed slot, issued together. Scalar operations, vector operations, TC VMEM loads and stores, and pushes to and pops from units such as the XLU each have their own slots. The listings in this paper write each instruction's slot before it; for example, \code{\{ va0: vadd.\allowbreak{}8x128.\allowbreak{}s32 v1,\allowbreak{} 1,\allowbreak{} v1 ; vld: vld.\allowbreak{}8x128 v2,\allowbreak{} [vmem:0x8] \}} is one bundle in which an add occupies the vector ALU slot \code{va0} and a load occupies the \code{vld} slot, and both are issued together. The vector side issues in bundle order: if a result a bundle needs is not ready yet, that bundle and all later bundles wait (Section~\ref{sec:3.3}).
+
+\subsection{Three Resources and an Analysis Framework}
+\label{sec:2.2}
+
+Top-k must compare elements at different positions within a row, and the hardware offers two ways to do so with very different costs.
+
+Cross-lane operations can only be done by the XLU. The XLU is a push-pop unit: a TC VREG is pushed in, and some time later the result is popped from a queue (Figure~\ref{fig:1}). Reductions (\code{vmax.\allowbreak{}xlane}, \code{vmax.\allowbreak{}index.\allowbreak{}xlane}) take 79 cycles from push to pop, and rotations (\code{vrot}) take 69 cycles; consecutive pushes to the same queue must be at least 8 cycles apart, and each TC has two queues. Reductions accept only f32.
+
+Elementwise operations are done by the vector ALU: comparisons, selects, additions, and subtractions between corresponding positions of two TC VREGs, with the result available in the next cycle, two instructions per cycle, and integer versions available. Reductions along the sublane direction and merges of several lane tiles are built from such instructions and do not go through the XLU.
+
+\begin{figure*}
+\centering
+\includegraphics[width=0.99\textwidth]{figures/xlu.pdf}
+\caption{The two kinds of operations in a TC that matter for top-k. Elementwise instructions operate between the same positions of two TC VREGs, with results available the next cycle; cross-lane operations push a whole TC VREG into the XLU, the result can be popped from the queue 79 cycles later, and a queue accepts one push every 8 cycles.}
+\label{fig:1}
+\end{figure*}
+
+All of these numbers were measured by us, as described in Section~\ref{sec:3.3}. They yield a simple analysis framework. The time of a piece of top-k is determined by one of three things: when XLU operations depend on one another, the length of the dependence chain times 79 cycles; when there are many independent XLU operations, the number of operations times the issue interval; when nothing goes through the XLU, the number of vector ALU instructions. Every reason a formulation in this paper is fast or slow falls into one of these three classes. The framework only identifies which class the bottleneck belongs to; it does not predict exact cycle counts. Section~\ref{sec:8.2} compares the lower bounds it gives with measurements.
+
+\subsection{How the Two Baselines Work}
+\label{sec:2.3}
+
+For k = 1, native XLA calls a general top-k custom call; for other k it usually sorts the whole row together with its indices and takes the first k. Its cycle count therefore hardly changes with k and grows with the number of rows and the row width.
+
+Official Pallas loops for k rounds, each taking the maximum and its index, then overwrites the selected position with \code{-inf}:
+
+\begin{lstlisting}
+curr = operand
+for _ in range(k):
+    idx = lax.argmax(curr, axis=axis, index_dtype=index_dtype)
+    val = jnp.max(curr, axis=axis)
+    mask = iota == jnp.expand_dims(idx, axis)
+    curr = jnp.where(mask, min_val, curr)   # min_val is -inf
+\end{lstlisting}
+In terms of the framework, each round's argmax depends on the previous round's \code{curr}, so the k \code{vmax.\allowbreak{}index.\allowbreak{}xlane} operations form a chain of length k, at a little over eighty cycles per round, 79 of which are spent waiting for the XLU. Its cycle count is proportional to k.
+
+\section{Method and Experimental Setup}
+\label{sec:3}
+
+\subsection{tpuasm: An Assembler for TPU Instruction Bundles}
+\label{sec:3.1}
+
+Most experiments in this paper have to answer the same kind of question: which instructions did the compiler actually emit, and in which slot of which bundle is each one; and after replacing, moving, or inserting a few of them, is the program faster? Existing means cannot do this. The compiler can print its final LLO as text (final bundles), but that is a representation one level above the machine program: it contains pseudo-instructions that occupy no slot, does not show physical slots, cannot distinguish some machine instructions that differ in a field, and cannot be assembled back after editing. A single-variable controlled experiment would then require changing higher-level source, which makes the compiler reschedule other instructions as well.
+
+So we wrote tpuasm~\cite{tpuasm}, an assembler and disassembler that works directly on machine programs. It does four things.
+
+\begin{itemize}
+\item \textbf{Disassembly.} It extracts the program image from a compiled executable and decodes it into a listing with physical slots: one instruction per line, braces enclosing a bundle, and prefixes such as \code{va0:} and \code{vx1:} naming the slot. Only instructions that actually occupy slots are listed. Comments in the listing record which line of the Pallas source each instruction came from, captured from the compiler during compilation.
+\item \textbf{Assembly.} A listing can be assembled back unchanged, byte for byte; it can also be edited and reassembled, in which case tpuasm solves how slots, immediates, and register-file ports are assigned among the instructions of a bundle, and reports an error if no assignment exists. The rescheduling tool of Section~\ref{sec:7.2} decides what else a bundle can hold by repeatedly querying this solver.
+\item \textbf{Executable rewriting.} It inserts a listing before a given bundle or deletes bundles, relocating branch targets and metadata accordingly, and the resulting executable can be loaded and run directly. All handwritten fragments, placeholder rewriting, and rescheduling in this paper reach the device this way.
+\item \textbf{On-device timing and data readback.} Two tools built on the three above: one inserts a handwritten listing into a carrier kernel and reads the cycle counter at both ends, or reads back the results the fragment writes to TC VMEM (Sections~\ref{sec:3.2} and \ref{sec:3.3}); the other inserts counter readings at given positions in any compiled program and reads them back after the program runs (Section~\ref{sec:3.4}).
+\end{itemize}
+
+\textbf{Where instruction names, operands, and encodings come from.} The TPU instruction set has no public documentation, and readers may reasonably ask how tpuasm knows these instructions. The answer is that everything comes from the publicly released libtpu, without any non-public material. libtpu is a binary package installed from PyPI with the TPU version of JAX~\cite{libtpu}, and it contains the compiler and the runtime. It embeds a complete ISA description (a protobuf descriptor) that lists, slot by slot, every instruction form and its fields; it also contains functions that encode instructions into machine words and decode machine words back into instructions. tpuasm's instruction table is generated from this descriptor: the TPU v4 TensorCore has 582 in-slot forms, of which 573 are registered. The final bytes of a program image are produced by libtpu's own encoder and interpreted by its own decoder when read. So every instruction tpuasm accepts is one this libtpu can encode, and the disassembled listing corresponds byte for byte to the program the compiler actually produced. In libtpu 0.0.49, C++ class and function names can be looked up (for example \code{Llo\allowbreak{}Region\allowbreak{}Builder::\allowbreak{}Vxpose} and \code{Latency\allowbreak{}Table\allowbreak{}Pufferfish}); Section~\ref{sec:7} uses them to locate the layers of the compiler.
+
+\textbf{Some instructions already have real uses inside the compiler.} The instructions used in Sections~\ref{sec:6} and \ref{sec:7}, \code{vsxpose}, \code{vsetiar}, \code{vld.\allowbreak{}iar}, \code{vst.\allowbreak{}iar}, and \code{vld.\allowbreak{}sshfl}, are all in this instruction table. Being in the table only shows that libtpu can encode them, but some of them also have real uses inside the compiler: XLA programs always begin with a sequence that loads the IARs, on which later strided loads and stores depend, and \code{tpu.\allowbreak{}gather} in the TPU dialect compiles to \code{vst} plus \code{vld.\allowbreak{}sshfl} on TPU v4 (Section~\ref{sec:7.3}). Mosaic does not emit them only because several layers of entry points are missing between Pallas and these instructions.
+
+\subsection{How Instruction Semantics Were Established}
+\label{sec:3.2}
+
+Sections~\ref{sec:6} and \ref{sec:7} use several instructions that Mosaic does not emit. The instruction table gives only names and operands, not semantics; the semantics likewise rely on no internal material, and anyone with a Cloud TPU v4 can reproduce them.
+
+\textbf{Instruction semantics are determined by on-device experiments.} Names are only hints. The method is to insert one instruction into a carrier kernel that only moves data, run it on the device with random inputs, read the results back to the host, and compare them element by element with a model written in NumPy; when the model is wrong, the model is revised until everything matches. Table~\ref{tab:2} gives the final models of four instructions, each checked with 4 random \code{u32[8,\allowbreak{}128]} inputs, with all 4096 elements matching (\code{semantics.\allowbreak{}py}, output in \code{results/\allowbreak{}semantics.\allowbreak{}txt}).
+
+\begin{table*}
+\centering
+\caption{Instructions used in this paper that Mosaic does not emit, with their experimentally established semantics. M is TC VMEM, A is the base address given by the instruction, s is the sublane index, and l is the lane index.}
+\label{tab:2}
+\footnotesize
+\begin{tabular}{ll}
+\toprule
+Instruction & Semantics established by experiment \\
+\midrule
+\code{vsxpose}, width 8 & Transposes each of the 16 8$\times$8 blocks in a TC VREG: \code{y[s,\allowbreak{} 8g+r] =\allowbreak{} x[r,\allowbreak{} 8g+s]} \\
+\code{vld.\allowbreak{}sshfl}, pattern P & Loads one tile; sublane s takes the row given by the s-th hex digit of P \\
+\code{vsetiar.\allowbreak{}raw} plus \code{vld.\allowbreak{}iar} & Each element loads at its own row offset: \code{y[s,\allowbreak{} l] =\allowbreak{} M[A + s + offset[s,\allowbreak{} l],\allowbreak{} l]} \\
+\code{vsetiar.\allowbreak{}raw} plus \code{vst.\allowbreak{}iar} & Each element stores at its own row offset: \code{M[A + s + offset[s,\allowbreak{} l],\allowbreak{} l] =\allowbreak{} x[s,\allowbreak{} l]} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The restrictions of instructions were also found by experiment. For example, if two elements in the same column of a \code{vst.\allowbreak{}iar} write to the same row, the TensorCore halts; which combinations halt the masked version was found case by case (Appendix~\ref{sec:B}). The only risk of such experiments is a halt, after which the program can simply be reloaded.
+
+\subsection{How Latencies Were Measured}
+\label{sec:3.3}
+
+The latencies of Section~\ref{sec:2.2} and the various waits used later were all measured with the on-device cycle counter LCC, which is read with the scalar instructions \code{srdreg.\allowbreak{}lcclo} and \code{srdreg.\allowbreak{}lcchi}. The method is to insert a handwritten fragment into a carrier kernel: read the counter, execute the instructions under test, and read it again. Vector instructions issue strictly in order; when a result an instruction needs is not ready (popping an XLU result, reading a tile that was just written), the hardware stalls it and everything after it waits. So with an \code{sfence} before the reading, which waits until all vector instructions have issued, the difference between the two readings includes the wait. An empty fragment reads 13 cycles, which is the fixed overhead of the readings themselves.
+
+For example, ``push one reduction and pop it'' reads 92, and subtracting 13 gives 79 cycles from push to pop; pushing 2 and 8 times on the same queue and then popping reads 100 and 148, 8 more cycles per push, which is the interval between consecutive pushes; splitting 16 pushes across two queues still reads 148, showing that the two queues do not interfere. Table~\ref{tab:3} gives all results (\code{latency.\allowbreak{}py}, output in \code{results/\allowbreak{}latency.\allowbreak{}txt}). Each reading was repeated 8 times with identical results.
+
+\begin{table*}
+\centering
+\caption{Measured latencies. Readings include the 13-cycle fixed overhead.}
+\label{tab:3}
+\footnotesize
+\begin{tabular}{lr>{\raggedright\arraybackslash}p{0.283\linewidth}}
+\toprule
+Fragment under test & Reading & Conclusion \\
+\midrule
+Empty & 13 & Fixed overhead of the readings \\
+16 dependent \code{vadd} & 29 & Elementwise results are ready the next cycle \\
+16 dependent \code{vrot.\allowbreak{}slane.\allowbreak{}down} & 43 & Rotation along sublanes takes two cycles \\
+\code{vmax.\allowbreak{}xlane}, \code{vmax.\allowbreak{}index.\allowbreak{}xlane}, \code{vadd.\allowbreak{}xlane}, each pushed once and popped & 92 & Reductions take 79 cycles from push to pop \\
+\code{vmax.\allowbreak{}xlane} pushed 2 and 8 times on one queue & 100, 148 & Consecutive pushes to a queue are 8 cycles apart \\
+\code{vmax.\allowbreak{}xlane} pushed 8 times on each of two queues & 148 & The two queues do not interfere \\
+\code{vrot} pushed once and popped & 82 & Rotations take 69 cycles from push to pop \\
+\code{vrot} 8 times, alternating XLU numbers 0 and 2; 0 and 1 & 138; 107 & The four XLU numbers in instructions map to two queues by their lowest bit \\
+\code{vsxpose} width 8, pushed once and popped & 139 & The segmented transpose takes 126 cycles from push to pop \\
+\code{vxpose} width 128, pushed once; pop the 1st result, all 16 results & 139, 264 & The first result of a full transpose arrives with the segmented transpose, then one TC VREG every 8 cycles \\
+4 \code{vrot} on the same queue after \code{vsxpose}; on the other queue & 330; 233 & After the transpose result is popped, its queue stays busy for about 97 more cycles, about 223 cycles after the push \\
+Two and four consecutive \code{vsxpose} on the same queue & 267, 523 & Each extra one adds 128 cycles: the next starts only when the previous result is out \\
+8 $\times$ (store tile A, load tile A); 8 $\times$ (store tile A, load tile B) & 77; 29 & Loading a tile just stored costs 8 cycles per pair; loading another tile does not wait \\
+8 $\times$ (\code{vsetiar}, \code{vld.\allowbreak{}iar}) & 60 & An indexed load after loading the IAR costs about 6 cycles per pair \\
+8 $\times$ (store tile B, \code{vld.\allowbreak{}iar} from tile A) & 61 & An indexed load after any store waits, whichever tile was stored \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+These numbers have independent corroboration: the compiler has its own latency table. libtpu's scheduler asks \code{Latency\allowbreak{}Table\allowbreak{}Pufferfish} how many cycles must separate two instructions; hooking this virtual function to record the queries and answers (\code{latency\_\allowbreak{}probe.\allowbreak{}py}, output in \code{results/\allowbreak{}latency-probe.\allowbreak{}txt}), its answers while compiling top-k are 79 from push to pop for reductions, 69 from push to pop for rotations and indexed permutations, and 8 between consecutive pushes on the same XLU, matching the first half of Table~\ref{tab:3}. The waits in Table~\ref{tab:3} related to transposes and IARs are either missing from the compiler's table or too small (Section~\ref{sec:7.3}); those are what we supply by measurement.
+
+For a whole program, the same method gives the actual issue time of every bundle: in the same executable, only the position of the second reading is moved forward one bundle at a time (\code{issue\_\allowbreak{}profile.\allowbreak{}py}). Section~\ref{sec:7} uses this to calibrate the timing model used for scheduling, and the rule that ``an indexed load after any store waits'' was found this way: the difference between measurement and model jumped only at bundles containing \code{vld.\allowbreak{}iar}.
+
+\textbf{Cycles and time.} The frequency of LCC was measured against the host's \code{CLOCK\_\allowbreak{}MONOTONIC} (\code{clock\_\allowbreak{}rate.\allowbreak{}py}, output in \code{results/\allowbreak{}clock-rate.\allowbreak{}txt}). LCC keeps counting between runs, so many runs can be strung together into one timeline: a short kernel runs 200 times over about 20 seconds, reading LCC at both ends of the kernel each time, and the host reads its clock before and after each call. The true times of the first and last readings are each bracketed by host readings, so dividing the whole LCC difference by the lower and upper bounds of the host interval gives an envelope of 1049.989 to 1050.010 MHz in both of two runs, consistent with the published 1050 MHz of TPU v4~\cite{jouppi2023tpuv4}. This envelope does not need any estimate of dispatch latency, and it also covers the idle time between runs. Another common method runs the same kernel looping 10$^{7}$ and 10$^{8}$ times and divides the difference in cycles by the difference in host time. Two runs gave 1049.876 MHz and 1049.958 MHz, 40 to 120 ppm below the envelope and different each time: besides device execution, the host time of a call includes dispatch, completion notification, and thread wake-up, which are not constant. The device's other counter, GTC, cannot serve as an independent reference either: in a single-chip session it is driven by the same clock, and when two readings are 10$^{8}$ cycles apart the GTC difference is 1066666800, 1066666801, or 1066666815, exactly 32/3 of the cycle count plus a phase difference of less than 16. So one cycle is about 0.95 ns, and 100 cycles below correspond to about 95 ns. All results in this paper are given in cycles and can be converted this way when needed.
+
+\subsection{The Timing Boundary: Starting and Ending in TC VMEM}
+\label{sec:3.4}
+
+A Pallas kernel can declare that its operands and results are in TC VMEM. To make native XLA's top-k also start in TC VMEM and end in TC VMEM, three things must be expressed separately in the program; if any one is missing, what is measured is not the same thing (\code{shell.\allowbreak{}py}).
+
+\begin{lstlisting}
+from jax._src.state import primitives as state
+from jax.experimental.layout import Layout, with_layout_constraint
+
+ROW = Layout(major_to_minor=(0, 1), tiling=((8, 128),))
+
+def pinned_row(x):
+    return with_layout_constraint(state.unpin(state.pin(x, to='vmem')), ROW)
+
+def program(x):
+    v, i = top_k(pinned_row(x))          # native XLA, or a Pallas kernel whose operand and results are declared pltpu.VMEM
+    return jax.lax.optimization_barrier((pinned_row(v), pinned_row(i)))
+\end{lstlisting}
+\textbf{Memory space.} Compiled HLO marks the memory space of each array with \code{S(\allowbreak{}n)} after its layout: arrays without \code{S} are in HBM, \code{S(\allowbreak{}1)} is TC VMEM, and \code{S(\allowbreak{}3)} is Megacore Shared CMEM; this is the numbering of this version of the TPU backend. \code{pin(\allowbreak{}x,\allowbreak{} to=\allowbreak{}'vmem')} emits a \code{Pin} custom call that sets the memory space of its result to TC VMEM, so after compilation its layout carries \code{S(\allowbreak{}1)}; \code{unpin} turns the buffer handle back into an ordinary array. These are internal JAX interfaces. A device's \code{memory\_\allowbreak{}kind} has only \code{device} (HBM) and two kinds of host memory and cannot express TC VMEM; the public \code{jax.\allowbreak{}ref.\allowbreak{}new\_\allowbreak{}ref(\allowbreak{}x,\allowbreak{} memory\_\allowbreak{}space=\allowbreak{}pltpu.\allowbreak{}VMEM,\allowbreak{} pin=\allowbreak{}True)} does not pass the target memory space to Pin in the current version, so the result is correct but the value stays in HBM.
+
+\textbf{Layout.} XLA uses a layout to describe how the elements of an array are placed in memory. The placement of Section~\ref{sec:2.1} is written \code{\{1,\allowbreak{}0:T(\allowbreak{}8,\allowbreak{}128)\}}: \code{\{1,\allowbreak{}0\}} lists the dimensions from fastest-varying to slowest, so dimension 1 (columns) varies fastest, and \code{T(\allowbreak{}8,\allowbreak{}128)} is the tile shape, tiles of 8 sublanes by 128 lanes. Pallas kernels use this layout for two-dimensional f32 arrays in TC VMEM; adding the memory space \code{S(\allowbreak{}1)} from the previous paragraph gives \code{\{1,\allowbreak{}0:T(\allowbreak{}8,\allowbreak{}128)S(\allowbreak{}1)\}}. All three endpoints of the timing interval (the input and the two results) are required to have this layout, so that native XLA starts from the same data and delivers the same results as the Pallas kernel. For some shapes XLA chooses a transposed layout (for example, \code{[16,\allowbreak{}8]} occupies only one tile after transposition) and inserts a layout-changing \code{copy} between Pin and Unpin, where copies are not allowed, causing a compilation error. \code{with\_\allowbreak{}layout\_\allowbreak{}constraint}~\cite{jax-layout} fixes the layout; it must be applied after Unpin, and constraining only the input before Pin is not enough.
+
+\textbf{A common endpoint.} Without \code{optimization\_\allowbreak{}barrier}, XLA may write one result out to HBM before finishing the other, so an outward transfer happens before the moment when ``both results are in TC VMEM''. After both results pass through a barrier together~\cite{pallas-async}, their Pins and Unpins are all scheduled before the first outward write.
+
+The timing interval starts at the end of the input's Unpin and ends at the end of the later of the two outputs' Unpins. LCC is read once at each end, and 20 cycles of reading overhead are subtracted from the difference. These readings differ from those in Section~\ref{sec:3.3}: they must be inserted into a complete compiler-generated program and cannot use scalar registers the compiler is using, so each reading first saves the two borrowed scalar registers to SMEM and restores them afterward, and the reading itself is also written to SMEM, 8 bundles in all including the \code{sfence}; with nothing between two such readings, the difference is 20 cycles. The carrier kernel of Section~\ref{sec:3.3} is handwritten, so registers can be used freely, one reading occupies one bundle, and the fixed overhead is 13 cycles. We do not insert a pair of readings around each HLO instruction and add them up: each reading carries an \code{sfence} that breaks the overlap of vector instructions, so such a sum is not the time of continuous execution. For every program measured, the scripts check that the three endpoints are all \code{\{1,\allowbreak{}0:T(\allowbreak{}8,\allowbreak{}128)S(\allowbreak{}1)\}} in the compiled HLO, that all instructions belonging to the top-k (including the input-independent \code{iota}) fall inside the interval, and that there is no DMA to or from HBM inside the interval.
+
+All implementations use exactly the same harness and differ only in the top-k in the middle. The Pallas implementations are kernels without DMAs or semaphores; the executables we rewrite (Sections~\ref{sec:6} and \ref{sec:7}) are also rewritten and timed in this harness. Native XLA may have its own transfers inside the interval, for example moving the index array it generates from Megacore Shared CMEM into TC VMEM, or transposing through Megacore Shared CMEM; these transfers are part of the algorithm XLA chose, so they count toward its cycles.
+
+Each program runs once on each of 8 inputs, each sort axis holding a random permutation of 0 to n $-$ 1; the first two runs are discarded and the median of the remaining six is taken. Both the program with readings inserted and the one without are checked element by element on all values and indices.
+
+All six readings of every Pallas implementation are identical, whereas most native XLA programs vary by 1 to 3 cycles. The difference is whether there is DMA in the interval. When an instruction issues is determined statically by the program itself: an instruction waits for the result of an earlier instruction or for a unit to become free, neither of which depends on the run, so as long as the interval contains only instructions, every run takes the same number of cycles. Most native XLA programs have DMAs between Megacore Shared CMEM and TC VMEM inside the interval, and when the instruction waiting for such a DMA is released depends on the state of the memory system at the time, which is dynamic. This can be checked directly (\code{xla\_\allowbreak{}inputs.\allowbreak{}py}, output in \code{results/\allowbreak{}xla-inputs.\allowbreak{}json}): for each shape, 4 different inputs are each run 6 times on the same program. The 18 shapes with DMA in the interval vary by 1 to 3 cycles even when the same input is repeated, and the variation does not depend on the input; of the 7 shapes without DMA, 6 read the same whether or not the input changes. The remaining one is top 8 of \code{[8,\allowbreak{}4096]}: XLA uses a dedicated top-k custom call for this shape, repeated runs on the same input are constant, and different inputs differ by 2 cycles, showing that it contains data-dependent branches. The cycle counts of the other 24 shapes do not depend on the input: most of them sort, and there are no data-dependent branches in the interval.
+
+This boundary is stricter than ``measuring only the middle part of a kernel''. Input-independent preparation (constants, masks, index arrays) is also counted inside the interval; if the starting point were placed after some wait inside the kernel, the compiler would schedule this work before the starting point, the readings would be too small, and by different amounts for different formulations.
+
+\textbf{A compiler bug.} For two shapes, row width 256 with k = 8 and row width 1024 with k = 32, native XLA fails to compile in this harness: it fuses the sort and the selection of the first k columns into one fusion, and Pin's memory space is added only to the outside of the fusion and not propagated to its root inside. There are two ready-made workarounds, but both change what is measured: disabling the fusion makes XLA fall back to an ordinary sort, so what is measured is no longer its default implementation; disabling Pin's precoloring takes the three endpoints out of TC VMEM. So we instead add the missing propagation in process, and these two shapes keep XLA's original fused implementation; they are marked \ddag{} in the tables. Details are in Appendix~\ref{sec:C.2}.
+
+\subsection{The Two Baselines and the Measured Shapes}
+\label{sec:3.5}
+
+Every performance claim in this paper is compared against both baselines.
+
+\begin{itemize}
+\item \textbf{Native XLA}: \code{jax.\allowbreak{}lax.\allowbreak{}top\_\allowbreak{}k(\allowbreak{}x,\allowbreak{} k)} compiled directly by XLA, taking the faster of \code{is\_\allowbreak{}stable=\allowbreak{}False} and \code{is\_\allowbreak{}stable=\allowbreak{}True}. It is the reference for correctness and the performance without Pallas.
+\item \textbf{Official Pallas}: the unmodified \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl}, placed in a kernel that does nothing but top-k. It is the status quo with Pallas.
+\end{itemize}
+
+All implementations are compared within the same boundary: the input is already in TC VMEM, the two results stay in TC VMEM, and there are no transfers to or from HBM inside the timing interval. This is exactly the situation of a top-k that follows other computation. Native XLA can also be placed in this boundary, as described in Section~\ref{sec:3.4}. This is the only timing boundary in the paper.
+
+Performance is compared on 25 selected shapes (\code{TIME\_\allowbreak{}CASES} in \code{compare.\allowbreak{}py}), all f32. JAX's upstream top-k tests check only correctness and offer no performance benchmark to reuse, so we start from the basic shape \code{f32[8,\allowbreak{}128]} (exactly one vector register, Section~\ref{sec:2.1}) and vary mainly one dimension per group to observe its effect on each implementation. The four groups follow the order of Section~\ref{sec:5}, each corresponding to one bottleneck:
+
+\begin{itemize}
+\item \textbf{Row width}: 8 rows, k = 8 for row widths 256, 1024, and 4096, k = 32 for row widths 1024, 4096, and 8192, 6 shapes (Table~\ref{tab:6}, Section~\ref{sec:5.1}).
+\item \textbf{Direction}: top-k along the first dimension, row width 128; k = 8 for 8, 16, and 128 rows, k = 32 for 32, 64, 128, and 256 rows, 7 shapes (Table~\ref{tab:7}, Section~\ref{sec:5.2}).
+\item \textbf{Basic shape}: \code{f32[8,\allowbreak{}128]} along the last dimension, k of 1, 8, 16, 32, and 128, 5 shapes (Table~\ref{tab:8}, Section~\ref{sec:5.3}).
+\item \textbf{Rows}: row width 128, k = 8, with 16, 32, 64, 96, 128, and 256 rows, plus top 16 of \code{[16,\allowbreak{}128]}, 7 shapes (Table~\ref{tab:11}, Section~\ref{sec:5.4}).
+\end{itemize}
+
+The group with row width 128 and k = 8 is exactly the MoE routing shape of Section~\ref{sec:1.1}.
+
+\textbf{Three deployment forms.} Our formulations reach the device in one of three ways. \textbf{Pallas source}: only Pallas's existing API, entering the public compilation path by replacing \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl}. \textbf{Executable rewriting}: using tpuasm to insert handwritten fragments into the compiled program or to reschedule part of it. \textbf{In-process patch}: modifying the libtpu already loaded in the process so that the compilation pipeline itself emits the needed instructions. All formulations of Section~\ref{sec:5} and the general dispatcher are of the first kind; fold-and-rank and the loser tree of Sections~\ref{sec:6} and \ref{sec:7} need one of the latter two. In the tables of Sections~\ref{sec:5} and \ref{sec:6}, the column ``Ours'' always means the general dispatcher, results that use the latter two forms are given in separate columns, and the summary in Section~\ref{sec:8.1} marks the deployment form shape by shape.
+
+Correctness checks use a separate, wider set of inputs that includes irregular shapes and three-dimensional arrays (Section~\ref{sec:4.5}).
+
+\subsection{Correctness Verification}
+\label{sec:3.6}
+
+All formulations are verified with the four checks of Section~\ref{sec:4.4}, and the tests go through the public Pallas compilation path: \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl} is replaced at compile time while the kernel still calls \code{jax.\allowbreak{}lax.\allowbreak{}top\_\allowbreak{}k(\allowbreak{}.\allowbreak{}.\allowbreak{}.\allowbreak{},\allowbreak{} is\_\allowbreak{}stable=\allowbreak{}False)}. The checks have four layers: the general dispatcher is checked on a batch of inputs covering special values (Section~\ref{sec:4.5}); every timed program, including native XLA, is checked element by element on all values and indices, both with and without the readings inserted; formulations that rewrite executables or rely on in-process patches are additionally checked in the timing harness with inputs containing special values; and the instructions Mosaic does not emit are first compared element by element with NumPy models (Section~\ref{sec:3.2}). The results are in Section~\ref{sec:8}.
+
+This is broad verification, not a proof over all combinations of bit patterns; the correctness of the key transformation being a bijection, of the two-phase processing, and of the minimum-key rank correction follows from derivation.
+
+\subsection{Scope and Reproducibility}
+\label{sec:3.7}
+
+This paper addresses top-k on a single chip and a single TensorCore and does not cover algorithms in which several cores cooperate; the experiments run on one TensorCore of one TPU v4 chip, with libtpu 0.0.49. Data types are limited to f32; top-k in \code{bfloat16} requires newer hardware and is not covered.
+
+All information used in this paper comes from publicly released software and experiments on real hardware, without any non-public hardware or compiler material: instruction names and encodings come from the libtpu release package itself, and instruction semantics and latencies are determined by experiment, as described in Sections~\ref{sec:3.1} to \ref{sec:3.3}. All code for this paper is available at \url{https://github.com/ayaka14732/tpu-v4-top-k} and depends only on JAX, libtpu, and tpuasm, the assembler we wrote for this work (Section~\ref{sec:3.1}); every table and figure has a corresponding script and raw record, listed in Appendix~\ref{sec:A}. This paper does not modify JAX or libtpu on disk: following the three deployment forms of Section~\ref{sec:3.5}, the formulations of Sections~\ref{sec:4} and \ref{sec:5} enter the public Pallas compilation path by replacing \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl}; the handwritten fragments of Section~\ref{sec:6} and some formulations of Section~\ref{sec:7} rewrite compiled executables; and the patches of Section~\ref{sec:7} affect only the libtpu already loaded in the process.
+
+\section{Correctness: What Goes Wrong and What Fixing It Costs}
+\label{sec:4}
+
+This chapter answers RQ1. Sections~\ref{sec:4.1} to \ref{sec:4.3} describe the three kinds of errors in official Pallas, Section~\ref{sec:4.4} derives the definition of correctness from them, Section~\ref{sec:4.5} compares the three implementations on a batch of inputs covering special values, and Sections~\ref{sec:4.6} to \ref{sec:4.10} measure the cost of fixing the errors.
+
+\subsection{Selected Positions Are Selected Again}
+\label{sec:4.1}
+
+Official Pallas uses the value \code{-inf} as the ``selected'' marker. When the input itself contains \code{-inf}, the two cannot be told apart. Take \code{f32[8,\allowbreak{}128]} in which each row has finite values 3, 2, and 1 only in lanes 0, 1, and 127 and \code{-inf} everywhere else, with k = 8. The first three rounds are fine. In round 4 the whole row is \code{-inf}, all tied, and argmax returns lane 127; ``changing'' it to \code{-inf} changes nothing, and every later round selects 127 again:
+
+\begin{lstlisting}
+values:  [  3.   2.   1. -inf -inf -inf -inf -inf]
+indices: [  0 127   1 127 127 127 127 127]
+\end{lstlisting}
+The comment speaks of duplicate indices, but the consequences are worse. The input at lane 127 is 2.0; it is returned as a real value in round 2 and then returned 5 more times with the value \code{-inf}, so values and indices no longer pair up, and gathering the input by these indices uses the same score 6 times. The same cause shows up in two other ways: when the row width is not a multiple of 128, a fully tied row returns the last lane of the TC VREG, which lies outside the array, so an all-\code{-inf} \code{f32[8,\allowbreak{}100]} returns index 127; and \code{approx\_\allowbreak{}max\_\allowbreak{}k} ends by calling the same function and is affected in the same way (Section~\ref{sec:8.3}). Only an exact \code{-inf} triggers the problem; replacing it with a very small finite value such as \code{-1e30} gives fully correct results.
+
+\subsection{Argmax Tie and NaN Rules Change with Data Placement}
+\label{sec:4.2}
+
+The second kind of error is not in \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl} but in the argmax it calls. Argmax is done by different hardware paths for three placements: when a row is in one TC VREG it is a single \code{vmax.\allowbreak{}index.\allowbreak{}xlane}; when rows are wider than 128, the vector ALU first merges the TC VREGs, followed by one \code{vmax.\allowbreak{}index.\allowbreak{}xlane} and one \code{vperm}; along sublanes it is an elimination tree built from \code{vrot.\allowbreak{}slane.\allowbreak{}down}, \code{vge}, and \code{vsel}. The three paths follow different rules.
+
+On ties, one lane tile returns the one with the largest lane index; several lane tiles return, among the tied elements, the one with the largest ``index modulo 128'', which is neither the first nor the last; along sublanes the result is determined by the structure of the elimination tree and has no simple rule. JAX \#34620~\cite{jax-issue-34620} describes the problem as ``returns the last index'', which holds only for a single lane tile.
+
+NaN is a bigger problem. When merging TC VREGs, the value is taken with \code{vmax}, which propagates NaN, but the index is chosen by the result of \code{vge}, and every comparison with NaN is false. So with several lane tiles, only a NaN in the last lane tile is found, and along sublanes none of the positions tested is found, so \code{x[argmax(\allowbreak{}x)] =\allowbreak{}=\allowbreak{} max(\allowbreak{}x)} does not hold. The effect on top-k is larger than on a single argmax: a NaN that is not selected is not marked as selected, so the maximum of every round is still NaN.
+
+\begin{lstlisting}
+values:   [nan nan nan nan nan nan nan nan]
+indices:  [124 122 244 109 233 102  98  97]
+expected: [nan  3.  3.  3.  3.  3.  3.  3.]
+\end{lstlisting}
+This code is generated by closed-source Mosaic, and there is no corresponding source in the JAX repository. Our formulations do not call it for these placements.
+
+\subsection{The Order of Complete Bit Patterns}
+\label{sec:4.3}
+
+The third kind of error requires first answering ``what is being compared''. Constructing inputs as raw \code{uint32} bit patterns, interpreting them as f32 unchanged, and giving them to \code{lax.\allowbreak{}top\_\allowbreak{}k} on the CPU and in native XLA, both return them from largest to smallest in this order:
+
+\begin{lstlisting}
+7fffffff 7fc00002 7fc00001 7f800001 7f800000 7f7fffff
+00000001 00000000 80000000 80000001 ff7fffff ff800000
+ff800001 ffc00001 ffc00002 ffffffff
+\end{lstlisting}
+NaN is not a single value ``greater than infinity''. Positive NaNs come before \code{+inf}, negative NaNs come after \code{-inf}, the payload of NaNs of the same sign also affects the order, and \code{+0} comes before \code{-0}. This is the IEEE 754 \code{total\allowbreak{}Order} predicate~\cite{ieee754}: negative NaNs are smallest, positive NaNs largest, and $-$0 precedes +0; among NaNs of the same sign, the standard only requires quiet NaNs to be farther from zero than signaling NaNs and leaves the rest to the implementation, and both the CPU and native XLA order them by bit pattern. XLA's operation semantics define the same total order for comparisons (\code{Eq\allowbreak{}Total\allowbreak{}Order} and the like)~\cite{xla-compare}: $-$NaN < $-$Inf < $-$finite < $-$0 < +0 < +finite < +Inf < +NaN. Official Pallas gives NaNs to the XLU, which treats every NaN as the maximum, so negative NaNs are placed first; and since each round's value comes from a floating-point \code{max}, payloads are not guaranteed to be preserved either.
+
+\subsection{Our Definition of Correctness}
+\label{sec:4.4}
+
+We define correctness by the order of Section~\ref{sec:4.3}: IEEE 754 \code{total\allowbreak{}Order}, with NaNs of the same sign ordered by bit pattern. Both native XLA and the CPU satisfy it, so this definition amounts to requiring bitwise agreement with native XLA. For every input along the top-k axis we check four things:
+
+\begin{enumerate}
+\item no index is out of range;
+\item the k indices are distinct;
+\item the input gathered by each index has the same bit pattern as the returned value;
+\item the sequence of bit patterns of the returned values equals the reference, which is a stable sort by the invertible integer key (Section~\ref{sec:4.9}) and has been checked bit for bit against the CPU.
+\end{enumerate}
+
+Among elements with identical bit patterns, the unstable entry point \code{is\_\allowbreak{}stable=\allowbreak{}False} does not specify the order of indices, and the check does not require one.
+
+\subsection{The Three Implementations Compared}
+\label{sec:4.5}
+
+Table~\ref{tab:4} gives the results of the three implementations on the same inputs. The inputs cover 31 combinations of shape, axis, and k (row widths 1 to 8192, 1 to 256 rows, along lanes and along sublanes, two- and three-dimensional), and each combination includes normal random numbers, uniformly random raw 32-bit patterns, random mixtures of 21 special bit patterns, small-integer ties, 21 constant bit patterns, targeted constructions with 0 to k + 1 non-negative elements, and a counterexample with finite values at the last position, 197592 inputs in total.
+
+\begin{table*}
+\centering
+\caption{Number of inputs with each kind of error among 197592 inputs.}
+\label{tab:4}
+\footnotesize
+\begin{tabular}{lrrrr}
+\toprule
+Implementation & \makecell[rb]{Index out\\of range} & \makecell[rb]{Duplicate\\index} & \makecell[rb]{Value and\\index\\unpaired} & \makecell[rb]{Bit-pattern sequence\\differs from reference} \\
+\midrule
+Native XLA & 0 & 0 & 0 & 0 \\
+Official Pallas & 1318 & 36844 & 67693 & 65666 \\
+Ours & 0 & 0 & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Native XLA has no errors on any input. The distribution of official Pallas's errors over input classes is in Table~\ref{tab:22} of Appendix~\ref{sec:C.3}: it is fully correct on normal random numbers, small-integer ties, and targeted constructions containing only finite values, which is exactly the range covered by the upstream tests; its errors are concentrated on inputs containing \code{-inf}, NaN, or raw bit patterns. Our general dispatcher (Section~\ref{sec:5.5}) has no errors on any input.
+
+The reason official Pallas keeps the error is that fixing it is expensive. Sections~\ref{sec:4.6} to \ref{sec:4.10} only fix, without speeding up, and measure that cost. All numbers are cycles for \code{f32[8,\allowbreak{}128]} with k = 8 in the timing interval of Section~\ref{sec:3.4}; official Pallas takes 685 cycles.
+
+\subsection{Why the Conflict Cannot Be Avoided}
+\label{sec:4.6}
+
+The most direct idea is to use a different marker value that makes selected positions smaller than any input. But f32 has no non-NaN value smaller than \code{-inf}. Conversely, replacing the input's \code{-inf} with some other value and reserving \code{-inf} for ``selected'' does not work either: every non-NaN bit pattern of f32 may be an input, so there is one more possible input value than there are places for them. The XLU's argmax accepts only f32, so as long as selection is marked with a value, the conflict is inevitable.
+
+There are two ways out: make the two conflicting values never appear at the same time, or switch to integers wherever the XLU is not involved, since integers have spare values.
+
+\subsection{Lifting: Making the Conflicting Values Appear at Different Times}
+\label{sec:4.7}
+
+Suppose a row has m elements not equal to \code{-inf}. During the first m rounds there is always an unselected element not equal to \code{-inf}, so argmax never selects an original \code{-inf}, and during this time it is safe to mark selection with \code{-inf}. At round m, all elements not equal to \code{-inf} have been selected, and at that point the original \code{-inf}s are lifted to the smallest finite f32: the real values are all gone, so there is no conflict, and the selected positions are still \code{-inf} and sort after them.
+
+\begin{lstlisting}
+ninf = operand == -jnp.inf
+m = jnp.sum(jnp.where(ninf, 0.0, 1.0), axis=axis, keepdims=True)
+when = jnp.where(ninf, jnp.maximum(m, 1.0), -1.0)   # the round in which each position is lifted
+...
+curr = jnp.where(hit, -jnp.inf, jnp.where(when == j + 1, lowest, curr))
+\end{lstlisting}
+m is one reduction, pushed together with round 0's argmax and not on the chain; the round in which each position is lifted is precomputed, and the lifting step happens during the 79 cycles spent waiting for that round's argmax. It takes 697 cycles, 12 more than official.
+
+For comparison, the most naive defensive masking (selected positions recorded in a separate boolean mask; each round first takes the maximum over unselected positions and then the smallest index among positions equal to it, with both reductions on the chain) takes 1355 cycles, twice the official time. This is presumably the kind of fix the comment calls expensive.
+
+\subsection{Moving the Fix off the Chain}
+\label{sec:4.8}
+
+Lifting still touches the working array in every round. A more thorough approach relies on a property of the official implementation: even after indices start repeating, the value returned in each round is still correct. So the fix can apply only to the output indices, and the original chain runs unchanged.
+
+Place the original \code{-inf}s after all other elements in increasing index order. For an original \code{-inf} at position i, its rank in the complete order is n $-$ 1 minus the number of \code{-inf}s to its right, independent of what was selected earlier. The number of \code{-inf}s to the right is a suffix sum, which can be written as the mask times a strictly lower-triangular matrix and given to the MXU: the inputs and weights are only 0 and 1, and the results are integers from 0 to 127, exactly. Loading the matrix and multiplying are interleaved with the waits of the argmax chain.
+
+It takes 685 cycles, no more than the official 685: the cost of the fix hides inside the waits of the chain.
+
+\subsection{Complete Bit Patterns}
+\label{sec:4.9}
+
+The previous two fixes solve the reselection of Section~\ref{sec:4.1} but not the bit-pattern order of Section~\ref{sec:4.3}. Bitwise correctness first needs an integer key whose order matches the reference. Let \code{b} be the f32 bit pattern interpreted as int32:
+
+\begin{lstlisting}
+key = jnp.where(b < 0, b ^ 0x7fffffff, b)
+\end{lstlisting}
+This is a bijection: non-negative bit patterns are kept unchanged, negative ones have their low 31 bits flipped, the signed integer order is exactly the order of Section~\ref{sec:4.3}, and the inverse is the same conditional XOR. This is the common radix-sort technique for turning floating-point numbers into comparable integers~\cite{herf2001radix}. Comparisons on the vector ALU use it directly.
+
+The XLU accepts only f32, so the keys cannot be sent in directly: converting them to f32 rounds, and reinterpreting them as f32 runs into NaNs and subnormals. We split the keys by sign into two segments of 2$^{31}$ values each and encode each segment as normal finite f32 values: the first half maps to negative normal numbers and the second half to positive normal numbers, neither range contains NaN, infinity, zero, or subnormals, the order within a segment is strictly preserved, and the encoding can be inverted. Then \code{-inf} can be reserved for ``inactive or selected'' and no longer conflicts with any real input. If a row has m non-negative keys, the first m outputs necessarily come from the non-negative segment and the rest from the negative segment; the two segments are processed in phases on the same chain, and after the m-th element is selected the encodings of the negative segment are placed into the working array all at once. This has the same timing as lifting, except that it handles two lossless encoded ranges.
+
+This formulation, called \code{phased}, takes 717 cycles and has no data-dependent branches: an input with only three finite values per row and \code{-inf} everywhere else reads the same.
+
+\subsection{Summary}
+\label{sec:4.10}
+
+\begin{table*}
+\centering
+\caption{Cycles of the fixes on \code{f32[8,\allowbreak{}128]} with k = 8 (\code{fixes.\allowbreak{}py}, \code{total\_\allowbreak{}order.\allowbreak{}py}). Native XLA takes 2564 cycles in the same interval.}
+\label{tab:5}
+\footnotesize
+\begin{tabular}{llrr}
+\toprule
+Formulation & Scope of the fix & Cycles & Relative to official Pallas \\
+\midrule
+Official Pallas & --- & 685 & --- \\
+Naive masking & Reselection (indices out of range with NaN) & 1355 & +97.8\% \\
+Lifting & Reselection & 697 & +1.8\% \\
+MXU suffix ranking & Reselection & 685 & 0\% \\
+\code{phased} & Bitwise correct & 717 & +4.7\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The answer to RQ1 is that the official implementation's errors go beyond the duplicate indices admitted in the comment: with \code{total\allowbreak{}Order} as the definition, it is wrong on 70706 of 197592 inputs. Fixing only the reselection costs almost nothing, and fixing to bitwise correctness costs 32 more cycles, only 4.7\%. ``Fixing is expensive'' holds only for the naive masking formulation. Whether fixed or not, Pallas remains much faster than native XLA.
+
+\section{Speedups Using Only Pallas}
+\label{sec:5}
+
+This chapter and Section~\ref{sec:6} answer RQ2. With correctness fixed, this chapter uses the analysis framework of Section~\ref{sec:2.2} to examine where official Pallas wastes time, using only Pallas's existing API. Each section corresponds to one bottleneck, and every candidate satisfies the definition of correctness in Section~\ref{sec:4.4}. The column ``Ours'' is the formulation the general dispatcher (Section~\ref{sec:5.5}) chooses for the shape, and its deployment form is Pallas source (Section~\ref{sec:3.5}). The last two columns give the change in cycles relative to the two baselines, with negative numbers meaning faster. The native XLA column takes the faster of the unstable and stable entry points, marked \dag{} when the stable one is faster; \ddag{} is explained in Section~\ref{sec:3.4}.
+
+\subsection{Wide Rows: One More XLU Trip on the Chain}
+\label{sec:5.1}
+
+When rows are wider than 128, official Pallas takes about 165 cycles per round, twice as many as for row width 128. After merging the TC VREGs, one \code{vmax.\allowbreak{}index.\allowbreak{}xlane} yields only a lane index, and one more \code{vperm} is needed to find which TC VREG that lane came from before the next round knows which element to mark as selected. Both go in and out of the XLU, and both are on the chain.
+
+Marking selection does not actually need the full index. We reorganize the data instead: first, within each lane, sort the keys of all TC VREGs in that lane from largest to smallest, giving several levels. The sort is only elementwise integer comparisons and selects between TC VREGs, done once with a Batcher odd-even merge network~\cite{batcher1968} pruned to the first k outputs. After that, each round does one argmax on level 0 only, giving lane p, and shifts the whole column of lane p up one level. Only one argmax remains on the chain. Which TC VREG the selected element came from is looked up from a position array that moves along with the sort, off the chain. Comparisons are done on integer keys, so the NaN loss of Section~\ref{sec:4.2} does not arise here; column heads are sent to the XLU with the encoding of Section~\ref{sec:4.9}.
+
+\begin{table*}
+\centering
+\caption{Wide rows, along the last dimension.}
+\label{tab:6}
+\footnotesize
+\begin{tabular}{lrrrrrr}
+\toprule
+Shape & k & Native XLA & Official Pallas & Ours & Ours vs. native XLA & Ours vs. official Pallas \\
+\midrule
+\code{[8,\allowbreak{}256]} & 8 & 2325\dag{}\ddag{} & 1325 & 922 & $-$60.3\% & $-$30.4\% \\
+\code{[8,\allowbreak{}1024]} & 8 & 6101 & 1445 & 943 & $-$84.5\% & $-$34.7\% \\
+\code{[8,\allowbreak{}4096]} & 8 & 5967 & 2223 & 1318 & $-$77.9\% & $-$40.7\% \\
+\code{[8,\allowbreak{}1024]} & 32 & 4103\ddag{} & 5733 & 3129 & $-$23.7\% & $-$45.4\% \\
+\code{[8,\allowbreak{}4096]} & 32 & 23111 & 9275 & 3899 & $-$83.1\% & $-$58.0\% \\
+\code{[8,\allowbreak{}8192]} & 32 & 28327 & 14411 & 4715 & $-$83.4\% & $-$67.3\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Ours is faster than both baselines on all six shapes. Official Pallas is slower than native XLA on \code{[8,\allowbreak{}1024]} with k = 32: its cycle count grows linearly with k, while XLA uses a fused sort-then-take-prefix implementation for this shape.
+
+\subsection{The Vertical Direction: No XLU at All}
+\label{sec:5.2}
+
+When top-k is along the sublane direction or an earlier axis, all reductions are done by the vector ALU, the restriction that the XLU accepts only f32 does not apply, and integer keys can be used from start to finish. This is the second way out mentioned in Section~\ref{sec:4.6}: keep a separate position array and use $-$1 for invalid, without even needing segments. Official Pallas uses the compiler-generated elimination tree in this direction, which goes wrong on NaN.
+
+We use three formulations in this direction, chosen by the number of rows and k.
+
+\begin{itemize}
+\item \textbf{Rank counting on integer keys}: with at most 8 rows, rank directly on integer keys (see Section~\ref{sec:5.3}); shifts along sublanes do not go through the XLU.
+\item \textbf{Candidate levels}: with more rows, sort the sublane tiles into levels with the same comparison network, reduce only the top eight rows each round, and pop one element from the selected column.
+\item \textbf{Merging}: once the columns are sorted, instead of popping one element at a time, rotate each level along sublanes by 4, 2, and 1 rows, and merge the eight sorted columns into one with three merges. It has no serial structure of length k, but the number of levels live during the merge grows with the number of rows, exceeding 32 TC VREGs from 128 rows on and spilling heavily to TC VMEM. The dispatcher chooses it for 16 to 64 rows.
+\end{itemize}
+
+\begin{table*}
+\centering
+\caption{The vertical direction, along axis 0.}
+\label{tab:7}
+\footnotesize
+\begin{tabular}{lrrrrrr}
+\toprule
+Shape & k & Native XLA & Official Pallas & Ours & Ours vs. native XLA & Ours vs. official Pallas \\
+\midrule
+\code{[8,\allowbreak{}128]} & 8 & 485.5 & 473 & 365 & $-$24.8\% & $-$22.8\% \\
+\code{[16,\allowbreak{}128]} & 8 & 990 & 499 & 234 & $-$76.4\% & $-$53.1\% \\
+\code{[32,\allowbreak{}128]} & 32 & 822.5 & 2033 & 653 & $-$20.6\% & $-$67.9\% \\
+\code{[64,\allowbreak{}128]} & 32 & 1915.5 & 2433 & 1305 & $-$31.9\% & $-$46.4\% \\
+\code{[128,\allowbreak{}128]} & 8 & 3547 & 936 & 564 & $-$84.1\% & $-$39.7\% \\
+\code{[128,\allowbreak{}128]} & 32 & 3559.5 & 3678 & 1825 & $-$48.7\% & $-$50.4\% \\
+\code{[256,\allowbreak{}128]} & 32 & 9236 & 6420 & 2467 & $-$73.3\% & $-$61.6\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Native XLA is a much stronger opponent in this direction: with k = 32, official Pallas is slower than it at 32, 64, and 128 rows, about 2.5 times slower at 32 rows. Ours is faster than both on all seven shapes; its smallest advantage over native XLA is on top 32 of \code{[32,\allowbreak{}128]}.
+
+\subsection{Large k: Removing the Serial Dependence}
+\label{sec:5.3}
+
+The formulations so far are still a chain of length k for row width 128. For large k one should switch to an algorithm without dependences, so that time is determined by the issue interval rather than by latency.
+
+Rank counting is enumeration sort (comparison counting)~\cite{knuth1998}: the rank of an element is the number of elements ordered before it, the elements with rank less than k are the result, and the rank is exactly each element's position in the output. Rotating the whole row by d lanes and comparing elementwise with the original row covers all pairs of elements d apart; doing this once for each d from 1 to n $-$ 1 gives n $-$ 1 independent \code{vrot}s that can be pushed back to back.
+
+\begin{lstlisting}
+count = jnp.where(key == INT_MIN, position, 0)
+lower = key - 1
+for distance in range(1, n):
+    other = jnp.roll(key, distance, axis=axis)
+    count += jnp.where(other > jnp.where(position >= distance, lower, key), 1, 0)
+\end{lstlisting}
+The comparisons use integer keys. Equal elements are ordered by smaller index first, written as a comparison with \code{key − 1}; for keys equal to \code{INT\_\allowbreak{}MIN}, subtracting one wraps around, so the ranks of those positions are seeded with their own indices. All elements get distinct ranks, the result is stable, even the indices match the CPU one by one, and \code{-inf} and NaN are just values of the key, with no special cases.
+
+The cycle count of rank counting is almost independent of k, like native XLA's full-row sort, without actually sorting the whole row. Its weakness is the number of rows: every TC VREG needs its own 127 shifts, and a single TC VREG already saturates the XLU.
+
+\begin{table*}
+\centering
+\caption{\code{f32[8,\allowbreak{}128]} along the last dimension, k from 1 to 128. Ours uses \code{phased} for k up to 8 and rank counting otherwise.}
+\label{tab:8}
+\footnotesize
+\begin{tabular}{lrrrrrr}
+\toprule
+Shape & k & Native XLA & Official Pallas & Ours & Ours vs. native XLA & Ours vs. official Pallas \\
+\midrule
+\code{[8,\allowbreak{}128]} & 1 & 1992 & 117 & 149 & $-$92.5\% & +27.4\% \\
+\code{[8,\allowbreak{}128]} & 8 & 2564 & 685 & 717 & $-$72.0\% & +4.7\% \\
+\code{[8,\allowbreak{}128]} & 16 & 2564.5 & 1341 & 830 & $-$67.6\% & $-$38.1\% \\
+\code{[8,\allowbreak{}128]} & 32 & 2564.5 & 2653 & 894 & $-$65.1\% & $-$66.3\% \\
+\code{[8,\allowbreak{}128]} & 128 & 2560.5 & 10525 & 1278 & $-$50.1\% & $-$87.9\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure*}
+\centering
+\includegraphics[width=0.74\textwidth]{figures/basic.pdf}
+\caption{The three curves of Table~\ref{tab:8}. The horizontal axis is evenly spaced in log$_2$ k.}
+\label{fig:2}
+\end{figure*}
+
+The three curves have different shapes (Figure~\ref{fig:2}). Native XLA sorts the whole row, so its cycle count does not depend on k (k = 1 uses a different implementation). Official Pallas is proportional to k; native XLA overtakes it at k = 32, and at k = 128 it is four times native XLA. Ours switches to rank counting for k of at least 16 and is faster than both. For k of 1 and 8, ours takes 32 more cycles than official Pallas; this is the cost of bitwise correctness from Section~\ref{sec:4.9}, and it is most visible in relative terms at k = 1.
+
+\subsection{Many Rows: The XLU Runs Out of Room}
+\label{sec:5.4}
+
+For row width 128, as the number of rows grows from 8 to 64, official Pallas's cycle count barely changes: during the 79 cycles spent waiting for the previous round's result, the two XLU queues have enough room to push two reductions for each of 8 TC VREGs. Beyond that they run out of room, and the cycle count becomes proportional to the total number of reductions.
+
+There are two remedies.
+
+\textbf{Fewer reductions.} The reduction that computes each round's value can be dropped: the loop computes only indices, and at the end one gather along lanes (a single \code{vperm}) fetches all k values at once, reducing the reductions from 2 per round to 1. The gather fetches the original input's bit patterns, so no decoding is needed. It must wait for the last round's index, so with few rows it costs one extra XLU latency.
+
+\textbf{No XLU at all.} When the row width is exactly 128 and there are at most 128 rows, transposing the whole \code{f32[R,\allowbreak{}128]} puts each input row in one lane, and the problem becomes the vertical problem of Section~\ref{sec:5.2}: merge out the top k along sublanes with integer keys, then transpose the two results back. There is no XLU chain in between, all rows share the same elementwise instructions, and the cycle count grows very slowly with the number of rows; the transposes at both ends are a fixed cost that does not pay off with few rows.
+
+\begin{table*}
+\centering
+\caption{Row width 128, k = 8, along the last dimension: the official chain, \code{phased}, \code{phased\_\allowbreak{}gather} which computes only indices and fetches values at the end, and \code{transposed} which merges along sublanes after a transpose.}
+\label{tab:9}
+\footnotesize
+\begin{tabular}{lrrrr}
+\toprule
+Rows & Official Pallas & \code{phased} & \code{phased\_\allowbreak{}gather} & \code{transposed} \\
+\midrule
+16 & 704 & 752 & 790 & 788 \\
+32 & 733 & 785 & 825 & 804 \\
+64 & 766 & 909 & 885 & 836 \\
+96 & 925 & 1246 & 950 & 869 \\
+128 & 1235 & 1714 & 1069 & 937 \\
+256 & 2379 & 3546 & 1813 & --- \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+For k = 8 the dispatcher chooses accordingly: the transpose for 64 to 128 rows, the chain that fetches values at the end for more rows, and \code{phased} otherwise.
+
+Whether the transpose pays off for other k depends on k. Table~\ref{tab:10} measures k of 2, 4, 16, and 32 at 16, 64, and 128 rows; the column ``No transpose'' is the formulation the dispatcher chooses without the transpose.
+
+\begin{table*}
+\centering
+\caption{Row width 128, along the last dimension, other values of k: official Pallas, the general dispatcher without the transpose, and \code{transposed}.}
+\label{tab:10}
+\footnotesize
+\begin{tabular}{llrrrr}
+\toprule
+Rows & k & Official Pallas & No transpose & \code{transposed} & \code{transposed} vs. official Pallas \\
+\midrule
+16 & 2 & 212 & 260 & 530 & +150.0\% \\
+64 & 2 & 273 & 392 & 627 & +129.7\% \\
+128 & 2 & 380 & 529 & 754 & +98.4\% \\
+16 & 4 & 376 & 424 & 610 & +62.2\% \\
+64 & 4 & 439 & 556 & 689 & +56.9\% \\
+128 & 4 & 636 & 684 & 814 & +28.0\% \\
+16 & 16 & 1360 & 1408 & 1062 & $-$21.9\% \\
+64 & 16 & 1475 & 1541 & 1271 & $-$13.8\% \\
+128 & 16 & 2510 & 1822 & 1323 & $-$47.3\% \\
+16 & 32 & 2672 & 1638 & 1598 & $-$40.2\% \\
+64 & 32 & 2903 & 2905 & 1998 & $-$31.2\% \\
+128 & 32 & 5057 & 3299 & 2045 & $-$59.6\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+For k of 16 and 32, the transpose is faster than both the official and the non-transposed formulations from 16 rows on, so the dispatcher uses the transpose for all cases with 16 to 128 rows and k of at least 16. For k of 2 and 4 it is the opposite: the official chain has only two or four XLU round trips, and the fixed cost of the transposes at both ends is already longer than the whole chain, so it does not pay off. Then the only option is \code{phased}, which is 8\% to 44\% slower than official. We have not solved the case of very small k; Section~\ref{sec:8.1} returns to it.
+
+\begin{table*}
+\centering
+\caption{Many rows, row width 128, along the last dimension.}
+\label{tab:11}
+\footnotesize
+\begin{tabular}{lrrrrrr}
+\toprule
+Shape & k & Native XLA & Official Pallas & Ours & Ours vs. native XLA & Ours vs. official Pallas \\
+\midrule
+\code{[16,\allowbreak{}128]} & 8 & 2606.5 & 704 & 752 & $-$71.1\% & +6.8\% \\
+\code{[32,\allowbreak{}128]} & 8 & 2619.5 & 733 & 785 & $-$70.0\% & +7.1\% \\
+\code{[64,\allowbreak{}128]} & 8 & 2681 & 766 & 836 & $-$68.8\% & +9.1\% \\
+\code{[96,\allowbreak{}128]} & 8 & 3296 & 925 & 869 & $-$73.6\% & $-$6.1\% \\
+\code{[128,\allowbreak{}128]} & 8 & 5259.5 & 1235 & 937 & $-$82.2\% & $-$24.1\% \\
+\code{[256,\allowbreak{}128]} & 8 & 8063 & 2379 & 1813 & $-$77.5\% & $-$23.8\% \\
+\code{[16,\allowbreak{}128]} & 16 & 2605.5 & 1360 & 1062 & $-$59.2\% & $-$21.9\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+This table includes cases the general dispatcher does not handle well, and we report them as they are. From 96 rows on, ours is faster than official Pallas. At 64 rows and below, ours is instead 7\% to 9\% slower than official Pallas. Why this range is hard and how to solve it is the subject of Section~\ref{sec:6}. Relative to native XLA, all shapes are at least 45\% faster.
+
+\subsection{Dispatch}
+\label{sec:5.5}
+
+The general dispatcher has the same signature as \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl} and can replace it directly (\code{fast} in \code{total\_\allowbreak{}order.\allowbreak{}py}). It chooses among the formulations above by shape and k: along lanes within one lane tile, it first takes the cheaper of the chain and rank counting by estimated cycles, and when it chooses the chain it then chooses among \code{phased}, the transpose, and fetching values at the end by the number of rows (Section~\ref{sec:5.4}); along lanes across several lane tiles it uses candidate columns; otherwise it uses the three vertical formulations. The estimates are fits to measurements and must be remeasured for another hardware generation.
+
+\subsection{Summary}
+\label{sec:5.6}
+
+The three-way comparison covers 25 shapes (Section~\ref{sec:3.5}; Tables~\ref{tab:6}, \ref{tab:7}, \ref{tab:8}, and \ref{tab:11}).
+
+\begin{itemize}
+\item Relative to native XLA, ours is faster on all 25 shapes, by 21\% to 93\% fewer cycles.
+\item Relative to official Pallas, ours is faster on 20 shapes, by 6\% to 88\%, and slower on 5 shapes, by 5\% to 27\%. These 5 shapes are a single case: row width 128, along the last dimension, at most 64 rows, and still using the chain, namely \code{[8,\allowbreak{}128]} with k = 1 and 8 and 16, 32, and 64 rows with k = 8. On these shapes the official chain is already right at the XLU latency, and what ours adds is mainly the instructions bitwise correctness requires.
+\item Official Pallas itself is slower than native XLA on 6 shapes, all with larger k.
+\end{itemize}
+
+So the first half of RQ2 can be answered as follows: four cases, wide rows, many rows, the vertical direction, and large k, can be faster than both baselines while staying correct, using only Pallas's existing API. What remains is row width 128, along the last dimension, still using an XLU chain: the basic case of top 8 on one TC VREG is solved by fold-and-rank in Section~\ref{sec:6.2}; top 8 with 16 to 64 rows is solved by the full transpose with a loser tree in Sections~\ref{sec:6.3} to \ref{sec:6.5}; only the case of very small k remains unsolved (Section~\ref{sec:8.1}).
+
+\section{Two New Algorithms}
+\label{sec:6}
+
+\subsection{The Two Remaining Difficulties}
+\label{sec:6.1}
+
+This chapter answers the second half of RQ2. Two cases remain after Section~\ref{sec:5}: the basic shape \code{f32[8,\allowbreak{}128]} with top 8, and row width 128 with 16 to 64 rows and k = 8. Both have the same root: the official formulation is a chain that goes through the XLU once per round, and in both cases this chain is already close to the hardware limit.
+
+\textbf{The basic shape.} On this shape, official Pallas takes 685 cycles and the bitwise-correct \code{phased} takes 717. The difficulty is that its structure has no slack left.
+
+\begin{itemize}
+\item \textbf{The chain's lower bound is right there.} Eight rounds of argmax depend on one another, each round must wait the full 79 cycles of the XLU, and eight rounds are 632 cycles, which no formulation that ``goes through the XLU once per round'' can avoid. Of the official 685 cycles, apart from these 632, there remain only a few instructions per round to pop, compare, and select, plus the kernel's entry and exit. So as long as it stays this chain, less than 8\% can be saved.
+\item \textbf{Correctness only adds.} Bitwise correctness needs the key transformation and the segment encoding and decoding; most of these instructions hide in the 79-cycle waits, but not all of them, so \code{phased} takes 32 more cycles than official. Along this chain, a correct formulation cannot be faster than official.
+\item \textbf{Existing chain-free algorithms do not pay off here.} Rank counting from Section~\ref{sec:5.3} has no dependence chain, but it needs 127 rotations; a queue accepts one push every 8 cycles, so even with two queues the pushes alone take over five hundred cycles, and with the pops and counting it loses to the eight-round chain at k = 8, only overtaking it at k = 16 (Table~\ref{tab:8}).
+\end{itemize}
+
+So to be faster on this shape, the number of XLU round trips must be far less than k, and the number of cross-lane operations far less than 127. Fold-and-rank in Section~\ref{sec:6.2} uses only three round trips and 15 rotations.
+
+\textbf{A middling number of rows with small k.} In Table~\ref{tab:11}, with 16 to 64 rows and k = 8, our general dispatcher is 7\% to 9\% slower than official Pallas, for three reasons.
+
+\begin{itemize}
+\item \textbf{The chain is amortized over many rows here.} The official chain waits for the XLU once per round, and these 79 cycles are shared by all rows: 8 rows take 685 cycles and 64 rows only 766, less than 100 cycles per TC VREG. The more rows, the cheaper the chain, until the XLU is saturated (in Table~\ref{tab:9}, official slows down noticeably from 96 rows on).
+\item \textbf{Chain-free algorithms cannot be amortized.} Rank counting needs 127 rotations per TC VREG; fold-and-rank from Section~\ref{sec:6.2} also needs three XLU round trips per TC VREG, the transpose occupies its queue, and all TC VREGs can only queue up on the two queues. Their cycle counts are roughly proportional to the number of rows: they win at 8 rows and already lose to the chain at 16 rows (Table~\ref{tab:17} in Section~\ref{sec:7.4}).
+\item \textbf{Along the XLU chain, a correct formulation is slower than official.} This is the same as the second point for the basic shape, only worse: with more rows, the instructions that can hide in the waits are divided among the TC VREGs, and the few extra elementwise instructions \code{phased} needs per TC VREG per round start to cost cycles, 143 more than official at 64 rows and 321 more at 96 rows. Dropping each round's value reduction offsets part of this but costs one extra gather at the end, which pays off only from 64 rows and beats official only at 128 rows (Table~\ref{tab:9}).
+\end{itemize}
+
+Together these three look like a dead end: the chain is cheap because rows share the waits, chain-free algorithms all pay XLU round trips per TC VREG, and a correct chain necessarily does more work than official. The way out is that all three assume the same thing, namely that each round's dependence goes through the XLU. The transpose of Section~\ref{sec:5.4} already avoids this and wins from 96 rows on; Sections~\ref{sec:6.3} to \ref{sec:6.5} push the same idea to fewer rows. It keeps the k rounds, but no round goes through the XLU; on the basic shape it is also faster than official, though not as fast as fold-and-rank (Section~\ref{sec:6.5}).
+
+Both algorithms use instructions that Mosaic does not emit (Table~\ref{tab:2}). This chapter first shows that they work with handwritten fragments, deployed by executable rewriting; Section~\ref{sec:7} then gets the compiler to emit fold-and-rank.
+
+\subsection{Fold-and-Rank}
+\label{sec:6.2}
+
+Fold-and-rank first moves the elements of each row from the lane direction to the sublane direction and then leaves the comparisons to the vector ALU and TC VMEM. The \code{vsxpose} of Table~\ref{tab:2}, at width 8, transposes each of the sixteen 8$\times$8 blocks within a TC VREG, which moves the low three bits of the lane index to the sublane direction. The algorithm has five steps.
+
+\begin{enumerate}
+\item \textbf{Fold.} One \code{vsxpose} turns the 128 elements of row r into 16 columns of 8 sublanes each.
+\item \textbf{Sort within columns.} Seven loads with sublane shuffling (\code{vld.\allowbreak{}sshfl}) count each element's rank $\rho$ within its own column; loading $\rho$ minus the sublane index into an IAR, one \code{vst.\allowbreak{}iar} writes each element to row $\rho$, so that each column is in descending order.
+\item \textbf{Rank across groups.} Fifteen \code{vrot}s by multiples of 8 align the columns of the other groups. The other column is descending, so ``the other column's row i precedes me'' changes only once as i increases, and a binary search is used: three loads and three comparisons count how many elements of the other column precede me, and since the row of the last load differs per element, it uses \code{vld.\allowbreak{}iar}.
+\item \textbf{Return the indices.} Elements with rank less than k put their original lane index into different bytes by rank, and an exact sum along lanes (\code{vadd.\allowbreak{}xlane}) collects them; the fields do not overlap and the sum stays below 2$^{24}$, so the floating-point addition is exact.
+\item \textbf{Return the values.} The top 8 write the in-segment encoding of their keys into different rows by rank, and one \code{vmax.\allowbreak{}xlane} per rank brings them back to the original layout; for larger k, one \code{vperm} fetches the values by index instead.
+\end{enumerate}
+
+\begin{figure*}
+\centering
+\includegraphics[width=0.99\textwidth]{figures/fold.pdf}
+\caption{The first three steps of fold-and-rank, showing only the 128 elements of one row. Folding moves the low three bits of the lane index to the sublane direction; after sorting within columns each column is descending; when ranking across groups, another group's column is rotated over and a binary search counts how many of its elements precede one's own.}
+\label{fig:3}
+\end{figure*}
+
+Cross-lane work drops from 127 rotations to 15, and there are only three XLU round trips (fold, rotate, return), which by Table~\ref{tab:3} are 126 + 69 + 79 = 274 cycles; the rest is work on the vector ALU and the load/store slots (Figure~\ref{fig:3}).
+
+To actually beat the chain, the algorithm alone is not enough; it must also be scheduled around the waits of Table~\ref{tab:3}. Vector issue is strictly in order, and when one bundle waits, all later ones wait: loading a tile just written waits, an indexed load after \code{vsetiar} waits, and after \code{vsxpose} its queue stays busy for nearly a hundred more cycles, during which a rotation pushed to that queue blocks along with every instruction after it. The handwritten version writes these waits as minimum distances between instructions, uses a small scheduler to fill in other instructions, and sends all rotations after the fold to the other queue.
+
+This handwritten program (\code{folded\_\allowbreak{}select.\allowbreak{}py}) is placed in the same timing interval: the carrier kernel's operand, results, and scratch space are at fixed TC VMEM addresses, and the handwritten fragment is inserted at the end of the kernel, reading the input directly and writing the two results.
+
+\begin{table*}
+\centering
+\caption{Handwritten fold-and-rank on \code{f32[8,\allowbreak{}128]}, deployed by executable rewriting.}
+\label{tab:12}
+\footnotesize
+\begin{tabular}{lrrrrrrr}
+\toprule
+k & Native XLA & \makecell[rb]{Official\\Pallas} & \makecell[rb]{Our\\dispatcher} & \makecell[rb]{Handwritten\\fold-and-rank} & \makecell[rb]{vs.\\native\\XLA} & \makecell[rb]{vs.\\official\\Pallas} & \makecell[rb]{vs.\\dispatcher} \\
+\midrule
+8 & 2564 & 685 & 717 & 579 & $-$77.4\% & $-$15.5\% & $-$19.2\% \\
+16 & 2564.5 & 1341 & 830 & 656 & $-$74.4\% & $-$51.1\% & $-$21.0\% \\
+32 & 2564.5 & 2653 & 894 & 689 & $-$73.1\% & $-$74.0\% & $-$22.9\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+It has no data-dependent branches and needs no fallback; inputs with special values read the same, and indices are stable among identical bit patterns. So the basic shape can be faster too: with k = 8 it is 15\% faster than official Pallas and 77\% faster than native XLA. The price is a fully handwritten program with the shape fixed at 8 rows; Section~\ref{sec:7} deals with this price.
+
+\subsection{Full Transpose: Keeping k Rounds, Changing the Path of Each Round}
+\label{sec:6.3}
+
+The k-round dependence itself is not the problem; the problem is that each round waits 79 cycles for the XLU. If each round used only elementwise instructions and TC VMEM loads and stores, a round would take only a few cycles; and if at the same time each input row were in one lane, the 128 lanes would be 128 input rows sharing the same vector instructions, amortizing more thoroughly than the official chain.
+
+\code{transposed} from Section~\ref{sec:5.4} is what this idea looks like when written in Pallas source: transpose the whole input, merge along sublanes, and transpose back. It takes 788 cycles at 16 rows and 937 at 128 rows, growing very slowly with the number of rows, but it starts above the official 704 at 16 rows. To win with fewer rows too, the part after the transpose must be nearly a hundred cycles cheaper. That part borrows the merge written for the general vertical problem: it merges eight candidate columns pairwise three times, each time a full comparison network that merges the whole columns. Counting the compiled listing (\code{merge\_\allowbreak{}profile.\allowbreak{}py}, output in \code{results/\allowbreak{}merge-profile.\allowbreak{}txt}), at 16 rows this kernel has 497 bundles and 904 vector ALU instructions, plus 135 loads from and 134 stores to TC VMEM, most of which are spills and reloads the compiler adds when registers run out. Here only the top 8 are needed, and the indexed loads unavailable from Pallas source can be used. So the method has three steps; the first two are the same as \code{transposed} and the third is replaced.
+
+\begin{enumerate}
+\item \textbf{Full transpose.} Transpose \code{f32[R,\allowbreak{}128]} to \code{[128,\allowbreak{}R]}, padding to 128 columns if needed. Original row r is now lane r, and its 128 elements lie along sublanes in 16 TC VREGs. This is an ordinary \code{x.\allowbreak{}T}, for which the compiler emits \code{vxpose}; one TC VREG of the result arrives every 8 cycles (Table~\ref{tab:3}), so the following sort can start as results arrive.
+\item \textbf{Candidate columns per sublane.} The 16 elements in the same sublane and lane of the 16 TC VREGs are sorted by integer key with the comparison network of Section~\ref{sec:5.1}, keeping only the first 8 levels. Each input row thus gets eight descending candidate columns of 8 elements each. The truncation cannot lose any of the global top eight: an element ranked below eighth within its own column has eight elements of that column alone ahead of it.
+\item \textbf{Eight-way merge, one output per round.} Each round compares the eight column heads, outputs the largest, and advances the column it came from by one. The position of the next column head differs per row, so it is loaded from the candidate table with \code{vsetiar} plus \code{vld.\allowbreak{}iar} at each lane's own offset. After eight rounds, the values and indices are each an \code{[8,\allowbreak{}R]} array whose column r holds the top 8 of row r in rank order; one full transpose of each gives the required \code{[R,\allowbreak{}8]} output.
+\end{enumerate}
+
+Throughout, the XLU is used only once at each end (transposing in and transposing back), and the sort and the eight merge rounds in between are all in-lane integer comparisons. The bit-pattern order is guaranteed by the integer keys, and NaN and \code{-inf} are just values of the key; each round advances only one candidate column, so already output positions are never selected again, and no ``selected'' marker is needed.
+
+\subsection{Loser Tree: Only Three Replays per Round}
+\label{sec:6.4}
+
+A direct eight-way merge must broadcast each of the eight column heads and make seven comparisons every round, all of it on every round. But only one column head changes per round, and the comparison results among the other seven can be kept.
+
+This is exactly what a loser tree~\cite{knuth1998} is for. The eight column heads play pairwise, the four winners play again, three levels and seven matches in all; each internal node records the loser of its match, and the winner at the root is the global maximum. After it is output, only its column gets a new head. The three subtrees next to the path from that leaf to the root are unchanged, and their winners are exactly the losers recorded at the three nodes on the path. So the new column head only needs to play the three losers along this path in turn to rebuild the whole tree, and the other four nodes remain valid. Each round goes from seven comparisons to three and no longer needs to broadcast eight column heads.
+
+\begin{figure*}
+\centering
+\includegraphics[width=1.00\textwidth]{figures/loser.pdf}
+\caption{Full transpose with a loser tree. After the transpose each input row occupies one lane; the 16 TC VREGs of each lane are sorted into eight descending candidate columns; each round only the new column head replays the three losers along the winner's path. All lanes proceed simultaneously; the figure shows one lane.}
+\label{fig:4}
+\end{figure*}
+
+The positions of the three nodes depend on which column won the previous round, which again differs per row. To avoid loading an IAR once per level, the losers of the four bottom nodes are kept in TC VMEM, each node's loser duplicated on the two sublanes it covers: when the winning column is c, offset c $-$ s reads exactly the node containing c, and an update uses a masked store to change both copies. The two middle nodes and the root, only three in all, stay in TC VREGs, and a single select on whether the winning column is less than 4 picks the middle node to replay. Each candidate's index word also carries six bits with its row in the candidate table; adding 8 gives the next candidate of the same column, and the six bits are shifted out on output.
+
+The transpose and the sorting into candidate columns are ordinary Pallas source; the merge and the transpose back are a handwritten fragment (\code{transpose\_\allowbreak{}merge.\allowbreak{}py}), inserted into the compiled executable like the handwritten program of Section~\ref{sec:6.2}, with the merge then rescheduled by measured timing using the tool of Section~\ref{sec:7.2}. It needs no libtpu patch.
+
+\subsection{Results}
+\label{sec:6.5}
+
+\begin{table*}
+\centering
+\caption{Row width 128, k = 8, along the last dimension: full transpose with a loser tree (executable rewriting), compared with the two baselines, our general dispatcher, and \code{transposed} written in Pallas source from Section~\ref{sec:5.4}.}
+\label{tab:13}
+\footnotesize
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Rows & Native XLA & \makecell[rb]{Official\\Pallas} & \makecell[rb]{Our\\dispatcher} & \code{transposed} & \makecell[rb]{Transpose +\\loser tree} & \makecell[rb]{vs.\\native\\XLA} & \makecell[rb]{vs.\\official\\Pallas} & vs. \code{transposed} \\
+\midrule
+16 & 2606.5 & 704 & 752 & 788 & 685 & $-$73.7\% & $-$2.7\% & $-$13.1\% \\
+32 & 2619.5 & 733 & 785 & 804 & 701 & $-$73.2\% & $-$4.4\% & $-$12.8\% \\
+64 & 2681 & 766 & 836 & 836 & 741 & $-$72.4\% & $-$3.3\% & $-$11.4\% \\
+96 & 3296 & 925 & 869 & 869 & 773 & $-$76.5\% & $-$16.4\% & $-$11.0\% \\
+128 & 5259.5 & 1235 & 937 & 937 & 802 & $-$84.8\% & $-$35.1\% & $-$14.4\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The gap left by Section~\ref{sec:5} is closed: at every number of rows from 16 to 64 (Figure~\ref{fig:5}), it is 2.7\% to 6.4\% faster than official Pallas, the 16, 32, and 64 rows in the table being three of them; at 96 rows it is 16.4\% faster. Its cycle count grows very slowly with the number of rows, only 117 cycles more from 16 to 128 rows, because extra rows only occupy more lanes and add only to the transposes at both ends, whereas the official chain slows down quickly once the XLU is saturated. Compared with \code{transposed}, which also transposes first but merges in Pallas source, it saves over a hundred cycles at every number of rows; this is the gain from replacing the merge with a loser tree. The instruction counts agree: at 16 rows the loser-tree kernel has 394 bundles, 103 fewer than \code{transposed}; 726 vector ALU instructions, 178 fewer; and 67 loads, of which 44 are the algorithm's own indexed and patterned loads, leaving only 23 for spill reloads.
+
+Numbers of rows that are not multiples of 8 work the same way, with the output transpose rounded up to 8 rows. The left panel of Figure~\ref{fig:5} shows all 121 numbers of rows from 8 to 128, each compiled, checked, and timed separately; the numbers row by row are in Table~\ref{tab:23} of Appendix~\ref{sec:C.5}. Within the same number of TC VREGs its cycle count is nearly constant, while the official one fluctuates slightly. It is faster than official on all 121 shapes, by at least 1.2\% and at most 35.1\%.
+
+\begin{figure*}
+\centering
+\includegraphics[width=1.00\textwidth]{figures/rows.pdf}
+\caption{Row width 128, along the last dimension, 8 to 128 rows. Left: k = 8, also marking \code{transposed} from Section~\ref{sec:5.4}; right: k = 16 (Section~\ref{sec:6.6}).}
+\label{fig:5}
+\end{figure*}
+
+At 8 rows it is also faster than official, but only by 8 cycles: with a single TC VREG there are no other rows to amortize the transposes at both ends. On this shape fold-and-rank from Section~\ref{sec:6.2} and Section~\ref{sec:7} is the right choice (Table~\ref{tab:16}).
+
+\subsection{Generalization and Limits}
+\label{sec:6.6}
+
+\textbf{k = 16.} Each candidate column has only 16 elements in all, so with k = 16 all 16 levels are kept, the candidate table grows from 64 to 128 rows, the merge goes from 8 to 16 rounds, and the row number in the index word grows from six to seven bits; nothing else changes. A candidate column is exhausted only if the 16th output happens to take its last element, after which nothing more is read, so no ``exhausted'' marker is needed.
+
+The right panel of Figure~\ref{fig:5} shows the results; the numbers row by row are in Table~\ref{tab:24} of Appendix~\ref{sec:C.5}. It is faster than official at every number of rows from 8 to 128, by 36\% to 61\%. At 16 rows it is on par with fold-and-rank from Section~\ref{sec:7.4} (864 versus 840), but its cycle count barely grows with the number of rows, whereas fold-and-rank's is proportional to it.
+
+\textbf{What was not done.} The merge is currently a handwritten fragment, for reasons given in Section~\ref{sec:7.5}. With k = 32 a candidate column can run out in the middle of the merge, requiring a sentinel smaller than every key; the integer keys already use all 32 bits, so a sentinel would need one more bit in the index word and one more comparison per match, which we did not implement. With k below 8, the fixed cost of the transposes at both ends exceeds the whole official chain (Section~\ref{sec:5.4}), so this approach has nothing to offer. With more than 128 rows an input row no longer fits in one lane, and the work must be split into batches.
+
+So the case of a middling number of rows with small k can be faster too. The two judgments of Section~\ref{sec:6.1}, that ``chain-free means paying XLU round trips per TC VREG'' and that ``a correct chain is necessarily slower'', are both right, but both assume that each round goes through the XLU; moving each round inside the lanes lets the k-round dependence stay as it is.
+
+\subsection{Paths That Did Not Work}
+\label{sec:6.7}
+
+To spare others the effort, we record directions that were tried and did not win.
+
+\textbf{Pairwise extraction.} Split a row into two halves by each bit of the index and take the maximum of each half; from these fourteen maxima the first and second place can be obtained together, and three XLU round trips give the top six. But recovering indices from values requires both places to be unique, and on ties the whole TC VREG must fall back to \code{phased}. When the check passes it takes 686 cycles, on par with the official 685; on fallback it takes 1362, twice official, triggered by inputs with only three finite values per row. The derivation is in Appendix~\ref{sec:C.4}.
+
+\textbf{Other directions.} Selecting two places per XLU round trip while also recovering indices needs 30 reductions per trip, and the pushes alone exceed the time of one round of the chain, running into the XLU's throughput. Segmented reductions: one instruction can give results for many segments, but the results stay in each segment's own lanes, and using them for the whole row needs another cross-lane move. The MXU: it can do linear operations along lanes, and Section~\ref{sec:4.8} uses it for a suffix sum, but comparison and maximum are not linear.
+
+\section{Back to the Compiler}
+\label{sec:7}
+
+The program of Section~\ref{sec:6.2} is faster than both baselines, at the price of being fully handwritten: registers, masks, scratch space, and the dependences between instructions are all assigned by hand, and the shape is fixed. This chapter answers RQ3: can we hand-write only the few instructions Mosaic does not emit and leave everything else to the compiler? Sections~\ref{sec:7.1} and \ref{sec:7.2} still rewrite the executable after compilation; Section~\ref{sec:7.3} switches to in-process patches so that the compilation pipeline emits these instructions itself.
+
+\subsection{Placeholder Rewriting}
+\label{sec:7.1}
+
+The most direct approach is to register a JAX primitive and emit the low-level \code{llo.\allowbreak{}*} ops directly in its Mosaic lowering rule. This does not work (\code{llo\_\allowbreak{}op\_\allowbreak{}probe.\allowbreak{}py}): Mosaic's layout inference knows only ops of the \code{tpu}, \code{vector}, and \code{arith} dialects, and every \code{llo.\allowbreak{}*} op with vector operands or results is rejected in the \code{infer-vector-layout} pass, including \code{llo.\allowbreak{}vxpose}, which Mosaic itself emits; moreover, the LLO dialect at the MLIR level has no ops related to IARs, and its transpose mode attribute has only three values, none of them the segmented transpose.
+
+What works is the reverse: where the instruction should be used in the Pallas source, write an operation the compiler knows as a placeholder, and after compilation use tpuasm to replace only the placeholder. The array shapes, which register each value lives in, and which bundle each instruction is in are all already decided by the compiler. The placeholder is an XOR with a unique immediate, \code{x \textasciicircum{} M}: the compiler knows nothing about M and cannot simplify it, and the rewriter can recognize it in the listing and read off the source and destination registers. Two-operand instructions use ``XOR then subtract'', since the compiler does not reassociate two different operations. We built four such intrinsics (\code{asm\_\allowbreak{}intrinsics.\allowbreak{}py}):
+
+\begin{table*}
+\centering
+\caption{The four intrinsics.}
+\label{tab:14}
+\footnotesize
+\begin{tabular}{lll}
+\toprule
+Function & Semantics & Replacement instructions \\
+\midrule
+\code{fold(\allowbreak{}x)} & \code{y[s,\allowbreak{} 8g+r] =\allowbreak{} x[r,\allowbreak{} 8g+s]} & \code{vsxpose}, \code{vpop} \\
+\code{sublane\_\allowbreak{}shuffle(\allowbreak{}x,\allowbreak{} pattern)} & Sublane s takes the row given by pattern & \code{vst}, \code{vld.\allowbreak{}sshfl} \\
+\code{sublane\_\allowbreak{}gather(\allowbreak{}x,\allowbreak{} offset)} & \code{y[s,\allowbreak{} l] =\allowbreak{} x[s + offset[s,\allowbreak{} l],\allowbreak{} l]} & \code{vst}, \code{vsetiar}, \code{vld.\allowbreak{}iar} \\
+\code{sublane\_\allowbreak{}scatter(\allowbreak{}x,\allowbreak{} offset,\allowbreak{} fill)} & \code{y[s + offset[s,\allowbreak{} l],\allowbreak{} l] =\allowbreak{} x[s,\allowbreak{} l]} & \code{vsetiar}, \code{vst.\allowbreak{}iar}, \code{vld} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The rewriter must handle more than one-to-one replacement. A value that must go through TC VMEM is stored to scratch space right after it is computed, and each value is stored only once; the two IARs are allocated in turn by live range, and when they do not suffice, offsets are stored first and loaded when their turn comes. The compiler may spill a value to TC VMEM and reload it into a different register, so finding a value's readers and definition must follow spills and copies rather than register names. Each of these rules corresponds to a bug that actually happened; they are collected in Appendix~\ref{sec:B}.
+
+With them, fold-and-rank becomes a Pallas function of about sixty lines (\code{folded\_\allowbreak{}top\_\allowbreak{}k.\allowbreak{}py}), with the number of rows and k as ordinary parameters:
+
+\begin{lstlisting}
+key = fold(jnp.where(bits < 0, bits ^ 0x7fffffff, bits))
+rank = jnp.where(key == INT_MIN, sublane, 0)
+for e in range(1, 8):
+    other = sublane_shuffle(key, pattern(e))
+    rank = rank + jnp.where(other > jnp.where(sublane >= e, below, key), 1, 0)
+column = sublane_scatter(key, rank - sublane)
+...
+for d in range(1, 16):
+    other = jnp.roll(column, 8 * d, axis=1)
+    ...
+    last = sublane_gather(other, offset) > threshold
+\end{lstlisting}
+The cross-lane rotations are ordinary \code{jnp.\allowbreak{}roll}, and the exact sum along lanes is ordinary \code{jnp.\allowbreak{}sum}; only the fold, the row shuffle, and the indexed loads and stores, four places in all, use intrinsics. On \code{f32[8,\allowbreak{}128]} it takes 714, 765, and 838 cycles for the top 8, 16, and 32 (the ``Placeholder + rewrite'' column of Table~\ref{tab:16}): the results are correct and faster than both baselines for larger k, but with k = 8 it is slower than official Pallas, far from the handwritten version.
+
+\subsection{The Gap Is in Scheduling, Not in Instructions}
+\label{sec:7.2}
+
+The placeholder-rewrite version takes over a hundred cycles more than the handwritten one. The instructions of the two are not exactly the same, but the gap comes mainly from idle waiting: the compiler's scheduler does not know the transpose- and IAR-related waits of Table~\ref{tab:3} and places instructions together, so the hardware has to wait instruction by instruction in its in-order issue pipeline. The way to test this judgment is direct: change no instruction, only the order, and see how many cycles are saved.
+
+This can be fixed after compilation, and the fix can be built as a tool independent of top-k (\code{reschedule.\allowbreak{}py}). It has four steps.
+
+\begin{enumerate}
+\item Read the kernel's listing into a dependence graph: which registers, tiles, IAR, and XLU queue each instruction reads and writes are all read from the listing text; only instructions whose read/write behavior has been verified are accepted, and unknown ones are rejected outright.
+\item Discard the compiler's register allocation. The ``finish using the old value before writing the new one'' orderings on TC VREGs, masks, and IARs are false dependences introduced by allocation; each write is treated as a new value, and registers are taken from the free pool during scheduling. XLU queues are not kept either; each push takes the queue that frees up first.
+\item Fill bundles cycle by cycle according to the timing of Table~\ref{tab:3}, picking each cycle from the ready instructions by longest path to the end. What a bundle can hold is not judged by this tool: each time an instruction is placed, tpuasm's solver tries to encode the bundle, and if it cannot, the next instruction is tried.
+\item Replace the original section with the new listing as a whole.
+\end{enumerate}
+
+Unlike the compiler, the rescheduled program cannot spill when registers run out, so it picks only within a window of instructions after ``the earliest not-yet-scheduled instruction in the original listing'', and the window limits how far it departs from the original order. The timing model is calibrated with the per-bundle issue-time measurement of Section~\ref{sec:3.3}. After rescheduling, the three k take 595, 626, and 671 cycles (Table~\ref{tab:16}): the same instructions, only in a different order, save 119 to 167 cycles and come within $-$4.6\% to +2.8\% of the handwritten version.
+
+\subsection{Patching libtpu in Process}
+\label{sec:7.3}
+
+Rewriting the executable is always a fix after compilation. Something closer to ``fixing it'' is to go down Mosaic's compilation pipeline and find the missing layer. If Pallas's maintainers were to support these instructions, these are the places they would change; the only difference is that they can change the source, while we can only change the machine code already loaded in the process. Taking inventory layer by layer, the lower the layer, the more complete it is:
+
+\begin{table*}
+\centering
+\caption{Support for the four operations at each layer of the compilation pipeline (\code{tpu\_\allowbreak{}op\_\allowbreak{}probe.\allowbreak{}py}).}
+\label{tab:15}
+\footnotesize
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.225\linewidth}l>{\raggedright\arraybackslash}p{0.133\linewidth}>{\raggedright\arraybackslash}p{0.133\linewidth}l}
+\toprule
+Layer & Segmented transpose & Fixed-pattern shuffle & Indexed load & Indexed store \\
+\midrule
+TPU dialect (Mosaic's input) & None & \code{tpu.\allowbreak{}gather} (constant indices) & \code{tpu.\allowbreak{}dynamic\_\allowbreak{}gather} & No op on values \\
+LLO dialect (MLIR) & Not in the mode enum & Present & \code{Vector\allowbreak{}Sublane\allowbreak{}Permute\allowbreak{}Op} & None \\
+C++-level LLO & In the modes of \code{Vxpose} & \code{Vld\allowbreak{}Sshfl} & \code{Vld\allowbreak{}Helper} accepts an IAR number & \code{Create\allowbreak{}Vector\allowbreak{}Store\allowbreak{}Indexed} \\
+Instruction encoding & Present & Present & Present & Present \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Only entry points in the top two layers are missing, and they are filled in as follows (\code{libtpu\_\allowbreak{}patch.\allowbreak{}py}, \code{front\_\allowbreak{}door.\allowbreak{}py}).
+
+\begin{itemize}
+\item \textbf{The fixed-pattern shuffle needs no patch.} \code{tpu.\allowbreak{}gather} already compiles to \code{vst} plus \code{vld.\allowbreak{}sshfl} on TPU v4; it is just that no Pallas lowering rule emits it.
+\item \textbf{The indexed load is one check away.} \code{jnp.\allowbreak{}take\_\allowbreak{}along\_\allowbreak{}axis(\allowbreak{}axis=\allowbreak{}0)} is already lowered to \code{tpu.\allowbreak{}dynamic\_\allowbreak{}gather} in Pallas and passes layout inference, only to be rejected in lower-to-LLO with \code{Sublane gather not supported by this TPU generation}. We remove this check (a 6-byte conditional jump) and redirect the next layer's call to our own function, which emits ``store, \code{vsetiar}, \code{vld.\allowbreak{}iar}``. The function body only calls libtpu's own \code{Llo\allowbreak{}Region\allowbreak{}Builder} methods by address; the hook is written in Python and wrapped as a function pointer with ctypes.
+\item \textbf{The fold and the indexed store share the same entry point.} The TPU dialect has no op that can express them, so a ``sublane gather with specially written indices'' serves as the carrier, and the hook tells which one to emit from how the indices are written.
+\item \textbf{The scheduler treats \code{vsetiar} as a memory barrier.} It is in the same class as fences and DMAs: memory accesses before the barrier must complete, and every load after it must wait. XLA loads the IARs only once at the start of a program, so this costs nothing there; in a kernel that does an indexed load every so often, each one raises a barrier that separates all the loads and stores around it. We register the IARs as registers with ordering dependences, take them out of the barrier class, and add the intervals to the latency table.
+\item \textbf{The latency table underestimates how long the queue stays busy after a transpose.} The table says 104 cycles; the measurement is about 223 (Table~\ref{tab:3}). With this corrected, the compiler itself schedules the rotations after the fold onto the other queue.
+\end{itemize}
+
+After all this, all four intrinsics are emitted by the compilation pipeline, with no executable rewriting (the ``Compiler-emitted'' column of Table~\ref{tab:16}). At this point the compiled program is 1\% to 10\% slower than the handwritten one: the instructions are all there, but scheduling still follows the compiler's original policy. One step further: the compiler's scheduler prioritizes by critical path, not by time; we attach a hook after its VLIW scheduling step (\code{vliw\_\allowbreak{}reorder.\allowbreak{}py}) that reorders by time using libtpu's own dependence graph, with IAR numbers and XLU queues assigned at scheduling time, while packing, register allocation, and spilling are still done by the compiler.
+
+\begin{table*}
+\centering
+\caption{Fold-and-rank on \code{f32[8,\allowbreak{}128]} from five sources, with the two baselines and our general dispatcher. By the deployment forms of Section~\ref{sec:3.5}, the ``Handwritten'', ``Placeholder + rewrite'', and ``+ reschedule'' columns are executable rewriting, the ``Compiler-emitted'' and ``+ in-pipeline reorder'' columns are in-process patches, and the dispatcher is Pallas source.}
+\label{tab:16}
+\footnotesize
+\begin{tabular}{lrrrrrrrr}
+\toprule
+k & Native XLA & \makecell[rb]{Official\\Pallas} & \makecell[rb]{Our\\dispatcher} & Handwritten & \makecell[rb]{Placeholder\\+ rewrite} & \makecell[rb]{+\\reschedule} & Compiler-emitted & \makecell[rb]{+\\in-pipeline\\reorder} \\
+\midrule
+8 & 2564 & 685 & 717 & 579 & 714 & 595 & 637 & 568 \\
+16 & 2564.5 & 1341 & 830 & 656 & 765 & 626 & 664 & 605 \\
+32 & 2564.5 & 2653 & 894 & 689 & 838 & 671 & 699 & 650 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+In the last configuration, the program the compiler generates from a sixty-line Pallas function is faster than the handwritten version for all three k (by 2\% to 8\%), 17\% to 75\% faster than official Pallas, and 75\% to 78\% faster than native XLA. The order of the four compilation configurations also shows where the gap comes from: from ``Placeholder + rewrite'' to ``+ reschedule'' and from ``Compiler-emitted'' to ``+ in-pipeline reorder'', the instructions do not change, only their order does. Note that ``faster than handwritten'' depends on this last reordering step, a scheduler we wrote and attached inside the compiler; correcting the latency table and dependences alone is not enough.
+
+\subsection{Multiple TC VREGs}
+\label{sec:7.4}
+
+With the number of rows as a parameter, we can look at how the algorithm does with more rows.
+
+\begin{table*}
+\centering
+\caption{Fold-and-rank with multiple TC VREGs (compiler-emitted; ``reordered'' adds the in-pipeline reorder; all deployed as in-process patches), along the last dimension. Each shape was additionally checked in the same harness with inputs containing special values, for value bit patterns and stable indices, with no errors.}
+\label{tab:17}
+\footnotesize
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Shape & k & Native XLA & \makecell[rb]{Official\\Pallas} & \makecell[rb]{Our\\dispatcher} & Fold-and-rank & \makecell[rb]{Fold-and-rank,\\reordered} & \makecell[rb]{Reordered vs.\\official Pallas} & \makecell[rb]{Reordered\\vs.\\dispatcher} \\
+\midrule
+\code{[16,\allowbreak{}128]} & 8 & 2606.5 & 704 & 752 & 1022 & 820 & +16.5\% & +9.0\% \\
+\code{[16,\allowbreak{}128]} & 16 & 2605.5 & 1360 & 1062 & 1022 & 840 & $-$38.2\% & $-$20.9\% \\
+\code{[32,\allowbreak{}128]} & 8 & 2619.5 & 733 & 785 & 1507 & 1437 & +96.0\% & +83.1\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+For top 16 of \code{[16,\allowbreak{}128]}, fold-and-rank is 38\% faster than official Pallas and 21\% faster than the general dispatcher (which uses the transpose of Section~\ref{sec:5.4} for this shape). For top 8 it loses to the chain, and the more rows, the more it loses. Relative to native XLA, all these shapes are faster.
+
+\subsection{Why the Loser Tree Is Still Handwritten}
+\label{sec:7.5}
+
+The intrinsics of Section~\ref{sec:7.1} store a TC VREG's value into one tile and then do indexed loads from that tile; the candidate table the loser tree reads spans 8 or 16 tiles, and which tile the next column head is in differs per row. Mosaic's input has an op that expresses ``indexed load from a block of memory'' (\code{tpu.\allowbreak{}vector\_\allowbreak{}load\_\allowbreak{}idx}), but on the TensorCore it is rejected as early as layout inference (\code{results/\allowbreak{}tpu-op-probe.\allowbreak{}txt}), and supporting it would require changing three passes, which we did not do. So the merge of Section~\ref{sec:6.4} can only exist as a handwritten fragment; the rescheduling tool and timing harness it uses are the same as in Sections~\ref{sec:6.2} and \ref{sec:7.2}, and it needs no libtpu patch.
+
+The answer to RQ3 is yes: what is missing is two layers of entry points, the TPU dialect and the LLO dialect at the MLIR level, plus the scheduler's latency table and dependences. With them filled in, for a single TC VREG the compiled program is 1\% to 10\% slower than the handwritten one, and one more reordering by time surpasses the handwritten version. With several TC VREGs and small k this algorithm itself does not win; that range is handled by the loser tree of Sections~\ref{sec:6.3} to \ref{sec:6.5}, whose merge still requires Mosaic to support indexed loads from multiple tiles.
+
+\section{Evaluation Summary}
+\label{sec:8}
+
+\subsection{Overall Results on the 25 Shapes}
+\label{sec:8.1}
+
+Figure~\ref{fig:6} puts the 25 shapes together, taking our fastest method for each shape and coloring by deployment form; Table~\ref{tab:18} summarizes by case.
+
+\begin{figure*}
+\centering
+\includegraphics[width=0.83\textwidth]{figures/overview.pdf}
+\caption{Ratio of cycles of our fastest method to official Pallas on the 25 shapes, colored by the deployment forms of Section~\ref{sec:3.5}. Ratios below 1 mean faster; the horizontal axis is logarithmic. The four groups are in the order of Section~\ref{sec:5}.}
+\label{fig:6}
+\end{figure*}
+
+\begin{table*}
+\centering
+\caption{Our fastest method for each case, its deployment form, and the change in cycles relative to the two baselines.}
+\label{tab:18}
+\footnotesize
+\begin{tabular}{l>{\raggedright\arraybackslash}p{0.142\linewidth}>{\raggedright\arraybackslash}p{0.133\linewidth}rrr}
+\toprule
+Case & Fastest method & Deployment form & Shapes & \makecell[rb]{vs. official\\Pallas} & vs. native XLA \\
+\midrule
+Rows wider than 128 & Candidate columns within lanes (Section~\ref{sec:5.1}) & Pallas source & 6 & $-$67\% to $-$30\% & $-$85\% to $-$24\% \\
+Along sublanes & Rank counting on integer keys, candidate levels, merging (Section~\ref{sec:5.2}) & Pallas source & 7 & $-$68\% to $-$23\% & $-$84\% to $-$21\% \\
+Row width 128, 8 rows, k = 128 & Rank counting (Section~\ref{sec:5.3}) & Pallas source & 1 & $-$88\% & $-$50\% \\
+Row width 128, 256 rows, k = 8 & Index-only chain with values fetched at the end (Section~\ref{sec:5.4}) & Pallas source & 1 & $-$24\% & $-$78\% \\
+Row width 128, 8 rows, k from 8 to 32 & Fold-and-rank (Section~\ref{sec:6.2}, Section~\ref{sec:7}) & In-process patch (fastest); executable rewriting also beats both baselines & 3 & $-$75\% to $-$17\% & $-$78\% to $-$75\% \\
+Row width 128, 16 rows, k = 16 & Fold-and-rank (Section~\ref{sec:7.4}) & In-process patch & 1 & $-$38\% & $-$68\% \\
+Row width 128, 16 to 128 rows, k = 8 & Full transpose with a loser tree (Sections~\ref{sec:6.3} to \ref{sec:6.5}) & Executable rewriting & 5 & $-$35\% to $-$3\% & $-$85\% to $-$72\% \\
+Row width 128, 8 rows, k = 1 & \code{phased} & Pallas source & 1 & +27\% & $-$93\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+We define speedup as the baseline's cycles divided by ours and take the geometric mean over the 25 shapes with equal weights. Using only Pallas source, that is, the general dispatcher of Section~\ref{sec:5}, it is 1.67$\times$ over official Pallas and 3.34$\times$ over native XLA; taking our fastest method for each shape, it is 1.79$\times$ and 3.57$\times$ respectively. The latter pair does not come from a single existing implementation: the general dispatcher does not include fold-and-rank or the loser tree, which currently require executable rewriting or in-process patches. At the 1050 MHz of Section~\ref{sec:3.3}, top 8 of \code{f32[8,\allowbreak{}128]} goes from the official 685 cycles (about 652 ns) to 568 (about 541 ns).
+
+Back to the question of Section~\ref{sec:1.3}: can we be fully correct and faster at the same time?
+
+\begin{itemize}
+\item \textbf{Correctness is cheap (RQ1).} Fixing only the reselection admitted in the comment costs almost nothing; fixing to bitwise agreement with native XLA costs the basic shape 32 more cycles, only 4.7\%. The premise that ``fixing is expensive'', on which the official implementation keeps its error, does not hold.
+\item \textbf{In most cases both are possible, using only Pallas's existing API (RQ2).} For four cases, wide rows, 96 or more rows, the vertical direction, and k of at least 16, the bitwise-correct formulation is faster than both official Pallas and native XLA (Section~\ref{sec:5.6}).
+\item \textbf{The basic case is possible, but today it needs instructions Mosaic does not emit (RQ2, RQ3).} For row width 128, 8 rows, and k = 8, the correct formulation using only Pallas's existing API is 4.7\% slower than official; with \code{vsxpose} and IAR loads and stores, it is 17\% faster than official.
+\item \textbf{A middling number of rows with small k is possible by changing the path of the chain (RQ2).} For row width 128, 16 to 64 rows, and k = 8, the correct formulation using only Pallas's existing API is 7\% to 9\% slower than official; a loser-tree merge after a full transpose is 2.7\% to 6.4\% faster than official at every number of rows in this range (Section~\ref{sec:6.5}).
+\item \textbf{Combining these methods, 24 of the 25 shapes in the three-way comparison are faster than official Pallas, and all are faster than native XLA.} The only exception is top 1 of \code{[8,\allowbreak{}128]}: there is only one round, nothing to amortize and no path to change, and the 32 extra cycles of bitwise correctness remain (official 117, ours 149). The cases with k of 2 and 4 in Table~\ref{tab:10} are the same thing: the chain is too short, the fixed costs of transposing or folding at both ends exceed it, and the cost of bitwise correctness has nowhere to hide. Routing with top 1 or top 2, mentioned in Section~\ref{sec:1.1}, falls into this class, and we have no formulation faster than official there.
+\end{itemize}
+
+The comparison with native XLA yields a side conclusion: official Pallas is not always faster than native XLA; it is slower on 6 of the 25 shapes, all with larger k. The correctness it gives up for performance buys no performance advantage on these shapes. Native XLA is correct on all inputs, and our general dispatcher is faster than it on all 25 shapes.
+
+\subsection{The Analysis Framework Versus Measurement}
+\label{sec:8.2}
+
+The analysis framework of Section~\ref{sec:2.2} only decides which class the bottleneck belongs to and gives a lower bound for that class. Table~\ref{tab:19} puts the lower bounds of several formulations next to the measurements.
+
+\begin{table*}
+\centering
+\caption{Lower bounds from the analysis framework versus measurements. The two rows for the official chain take the difference between two adjacent k divided by the number of rounds, i.e. cycles per round; the others are cycles of the whole timing interval.}
+\label{tab:19}
+\footnotesize
+\begin{tabular}{lllrrr}
+\toprule
+Formulation & Shape & \makecell[lb]{Bottleneck identified\\by the framework} & \makecell[rb]{Lower\\bound} & Measured & \makecell[rb]{Lower bound\\/ measured} \\
+\midrule
+Official chain, per round & \code{[8,\allowbreak{}128]} & XLU round trip & 79 & 82 & 96\% \\
+Official chain, per round & \code{[8,\allowbreak{}1024]} & Two XLU round trips & 148 & 178.7 & 83\% \\
+Rank counting, k = 16 & \code{[8,\allowbreak{}128]} & XLU issue & 573 & 830 & 69\% \\
+Fold-and-rank, k = 8 & \code{[8,\allowbreak{}128]} & Three XLU round trips & 274 & 568 & 48\% \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+The chain is the class the framework predicts best: on \code{f32[8,\allowbreak{}128]} the official chain takes 3 cycles per round more than the XLU round trip, namely the few instructions per round to pop, compare, and select; for wide rows the chain has two XLU round trips, the lower bound doubles accordingly, and the measurement is within 20\% of it. The lower bound for rank counting counts only the pushes of 127 rotations; what the measurement adds is the elementwise comparisons and accumulation after the rotations and the arrangement of k results by rank, which is why the dispatcher's estimate for rank counting has a term proportional to k (Section~\ref{sec:5.5}). Fold-and-rank is farthest from its lower bound: the three XLU round trips are only about half of the measurement, and the rest is waits such as read-after-write on TC VMEM and indexed loads after \code{vsetiar} from Table~\ref{tab:3}, plus work on the vector ALU. In other words, once the XLU is no longer the bottleneck, ``the number of vector ALU instructions'' is not enough to describe the time; all the waits of Table~\ref{tab:3} must be accounted for, which is exactly what the rescheduling of Section~\ref{sec:7} does. The framework serves to decide which class of algorithm to switch to; the exact dispatch boundaries still rely on fits to measurements.
+
+\subsection{Use in Approximate Top-k}
+\label{sec:8.3}
+
+The two-stage approximate algorithm of TPU-KNN~\cite{chern2022tpuknn} is also implemented in Pallas. When \code{jax.\allowbreak{}lax.\allowbreak{}approx\_\allowbreak{}max\_\allowbreak{}k} is called in a kernel, Pallas first cuts a row into slices of b elements, compares them elementwise, and keeps at each position the maximum over the slices and its index; it then calls \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl} on these b candidates, passing the indices along as \code{carried\_\allowbreak{}idx}~\cite{jax-topk-impl}. b is determined by the recall target r as $\lceil$(k $-$ 1)/(1 $-$ r)$\rceil$ rounded up to a multiple of 128: with r = 0.95 there are 256 candidates for k = 8 and 640 for k = 32; with r = 1 the whole call is just \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl}. So the input of the second stage falls squarely within the wide rows of Section~\ref{sec:5.1}, and our general dispatcher already accepts \code{carried\_\allowbreak{}idx} and can replace it as is.
+
+The first stage has the problem of Section~\ref{sec:4.2} too. It merges slices with \code{seg > best\_\allowbreak{}val}, and every comparison with NaN is false: NaNs in later slices are never selected, and a negative NaN in the first slice, once it occupies a position, is never replaced, blocking every element of the other slices at that position. We also move the first stage onto integer keys (\code{approx.\allowbreak{}py}): keys are compared elementwise, only keys and indices are kept, and the candidates' values are recovered from their keys at the end; a candidate is replaced only on strictly greater, so on equal keys the slice with the smaller index is kept, the same rule as the original; the tail slice is padded with the smallest key \code{INT\_\allowbreak{}MIN}, which is never selected.
+
+The result of an approximate algorithm is not unique, so correctness is checked in two parts. The first part applies to all implementations: the first three checks of Section~\ref{sec:4.4}, plus the requirement that the global maximum (in the order of Section~\ref{sec:4.3}) be first, which any algorithm that buckets by position should satisfy, because the global maximum is always the candidate of its own position. The second part applies only to the Pallas implementations: bitwise comparison with a reference, which is the exact result of the same bucketing algorithm on integer keys. The inputs follow the classes of Section~\ref{sec:4.5}, with 4 shape combinations and 2752 inputs in all.
+
+\begin{table*}
+\centering
+\caption{Number of inputs with each kind of error among 2752 inputs for Pallas's \code{approx\_\allowbreak{}max\_\allowbreak{}k} (recall 0.95), and for native XLA's \code{approx\_\allowbreak{}max\_\allowbreak{}k}. ``Second stage replaced'' replaces \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl} with our general dispatcher; ``Both stages replaced'' also moves the first stage onto integer keys.}
+\label{tab:20}
+\footnotesize
+\begin{tabular}{lrrrrr}
+\toprule
+Implementation & \makecell[rb]{Index out\\of range} & \makecell[rb]{Duplicate\\index} & \makecell[rb]{Value and\\index\\unpaired} & \makecell[rb]{Maximum\\not first} & \makecell[rb]{Differs\\from\\reference} \\
+\midrule
+Native XLA & 0 & 0 & 0 & 601 & --- \\
+Official Pallas & 0 & 80 & 1060 & 1150 & 1150 \\
+Second stage replaced & 0 & 0 & 0 & 254 & 347 \\
+Both stages replaced & 0 & 0 & 0 & 0 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Official Pallas is wrong on 1230 inputs. With only the second stage replaced, duplicate and unpaired indices disappear, but the NaNs lost in the first stage remain, leaving 347; with both stages replaced there are no errors. Native XLA's \code{approx\_\allowbreak{}max\_\allowbreak{}k} buckets differently and cannot be compared with the reference; its indices are all in range, distinct, and paired with their values, but on raw bit patterns and mixtures of special bit patterns, 601 inputs do not have the global maximum first: on raw bit patterns it skips positive NaNs and returns the largest finite value, and in mixtures of special bit patterns it may place negative NaNs before \code{+inf}. XLA's documentation does not specify how \code{approx\_\allowbreak{}max\_\allowbreak{}k} handles NaN, so we only record its difference from the order of Section~\ref{sec:4.3} and do not count it as an error.
+
+\begin{table*}
+\centering
+\caption{Cycles of \code{approx\_\allowbreak{}max\_\allowbreak{}k} (recall 0.95) in the timing interval of Section~\ref{sec:3.4}. The ``Exact'' column is the cycles of our general dispatcher computing the exact top-k on the same shape (Table~\ref{tab:6}), with --- for shapes not measured there. \ddag{} is explained in Section~\ref{sec:3.4}.}
+\label{tab:21}
+\footnotesize
+\begin{tabular}{lllrrrrrr}
+\toprule
+Shape & k & Candidates & Native XLA & \makecell[rb]{Official\\Pallas} & \makecell[rb]{Second\\stage\\replaced} & \makecell[rb]{Both\\stages\\replaced} & \makecell[rb]{Both replaced\\vs. official} & \makecell[rb]{Exact: our\\dispatcher} \\
+\midrule
+\code{[8,\allowbreak{}1024]} & 8 & 256 & 3340\ddag{} & 1529 & 975 & 986 & $-$35.5\% & 943 \\
+\code{[8,\allowbreak{}4096]} & 8 & 256 & 3395\ddag{} & 1588 & 1037 & 1068 & $-$32.7\% & 1318 \\
+\code{[64,\allowbreak{}4096]} & 8 & 256 & 5663\ddag{} & 3430 & 3288 & 3518 & +2.6\% & --- \\
+\code{[8,\allowbreak{}4096]} & 32 & 640 & 4749\ddag{} & 7146 & 3279 & 3346 & $-$53.2\% & 3899 \\
+\code{[8,\allowbreak{}8192]} & 32 & 640 & 4813.5\ddag{} & 7228 & 3328 & 3479 & $-$51.9\% & 4715 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+With both stages replaced, it is 33\% to 53\% faster than official Pallas on all shapes except \code{[64,\allowbreak{}4096]}, more than twice as fast with k = 32: there the official second stage takes the maximum round by round over 640 candidates, exactly the wide-row, larger-k case of Table~\ref{tab:6}. On \code{[64,\allowbreak{}4096]} the first stage dominates, and converting every element to an integer key makes it 2.6\% slower than official; replacing only the second stage makes it 4.1\% faster but keeps the first stage's NaN loss. Native XLA sorts and takes a prefix inside the interval and moves data through Megacore Shared CMEM; with both stages replaced, ours is 28\% to 70\% faster.
+
+The last column puts approximate and exact side by side: with our formulations for both, the change in cycles of approximate relative to exact is +5\% for top 8 of \code{[8,\allowbreak{}1024]}, $-$19\% for top 8 of \code{[8,\allowbreak{}4096]}, $-$14\% for top 32 of \code{[8,\allowbreak{}4096]}, and $-$26\% for top 32 of \code{[8,\allowbreak{}8192]}. In this range of row widths, recall 0.95 reduces the candidates only to between a sixteenth and a quarter of the row, and the first stage itself must compare every element once, so the speed bought with recall is at most a quarter, and with row width 1024 and k = 8 approximate is even slower than exact.
+
+\subsection{Correctness Verification}
+\label{sec:8.4}
+
+The results of each layer of checks in Section~\ref{sec:3.6} are as follows.
+
+\begin{itemize}
+\item The general dispatcher: the 31 combinations and 197592 inputs of Table~\ref{tab:4}, with zero errors of all four kinds; the results of official Pallas and native XLA on the same inputs are in Table~\ref{tab:4}.
+\item Every timed program, including native XLA, was checked element by element on all values and indices of the 8 inputs, with and without the readings inserted.
+\item Handwritten fold-and-rank (Section~\ref{sec:6.2}) was additionally checked in the timing harness with inputs containing special values (random raw bit patterns, small-integer ties, constant bit patterns, 0 to k + 1 non-negative keys, three finite values with \code{-inf} elsewhere, mixtures of special bit patterns).
+\item Fold-and-rank from placeholder rewriting and from the compilation pipeline (Section~\ref{sec:7}) was checked for every shape and every compilation configuration in the timing harness with the same classes of inputs, for value bit patterns and stable indices, with no errors.
+\item Full transpose with a loser tree (Sections~\ref{sec:6.3} to \ref{sec:6.5}): every number of rows from 8 to 128 was additionally checked in the timing harness with 80 inputs, 658240 rows in all. 64 of them follow the classes of Table~\ref{tab:4}, and \ref{tab:16} are targeted: making all of the top 8 come from the same candidate column (advancing to the last level of the candidate table), or switching candidate columns every round (taking a different winner path every round). The 16 numbers of rows for k = 16 were checked the same way, 95744 rows in all.
+\item The four instructions of Table~\ref{tab:2} were each compared element by element with their models on 4 random inputs.
+\end{itemize}
+
+Two methodological lessons are worth recording. First, checking a fragment does not replace checking the complete program: a handwritten fragment was fully correct in the test carrier but wrong in the complete program, because the carrier happened to leave a zero in some register, masking a missing dependence. Second, correctness on small shapes does not show that the rules are followed: several bugs in the rewriter appeared only when registers were tight and the compiler started reusing and spilling them.
+
+\section{Discussion and Limitations}
+\label{sec:9}
+
+\subsection{Generalizable Findings}
+\label{sec:9.1}
+
+\begin{itemize}
+\item \textbf{Fix the boundary before comparing.} Placing native XLA in the same interval as Pallas requires specifying the memory space, the layout, and a common endpoint for the two results (Section~\ref{sec:3.4}). Once the boundary is fixed, native XLA is stronger than commonly assumed in the vertical direction and for larger k; input-independent preparation must also be counted inside the interval, or comparisons between formulations are distorted.
+\item \textbf{A chain need not be broken; its path can be changed.} The official chain is slow because each round waits for the XLU, not because it has k rounds. Transposing the data so that each row occupies one lane leaves each round with only in-lane integer comparisons and indexed loads, and many rows can share the same instructions (Section~\ref{sec:6.3}).
+\item \textbf{For fold-and-rank, the gap between the compiler and handwritten code is mainly in scheduling.} The same instructions, reordered by real timing, reach the handwritten level. libtpu's scheduler lacks three specific things: the queue occupancy after a transpose in its latency table, treating the IAR as something other than a memory barrier, and assigning XLU queues and IAR numbers at scheduling time rather than before it. These three are themselves independent of top-k, but we have measured their benefit only on the fold-and-rank kernel; how much they help other kernels has not been verified.
+\item \textbf{A closed-source toolchain does not prevent this kind of work, but it requires a tool that operates on machine programs.} The instruction table, the encoder, and the symbols are all in the publicly released binary, and semantics and latencies can be measured on real hardware. We built these into tpuasm: reading a listing, changing an instruction, inserting a fragment, loading it back, running it, and reading the cycle count, none of which requires recompilation, so controlled experiments can vary a single quantity (Sections~\ref{sec:3.1} to \ref{sec:3.3}). tpuasm itself is independent of top-k; the rescheduling tool of Section~\ref{sec:7} and the latency measurement method of Section~\ref{sec:3} are also not designed around top-k, but we have used them only on the few top-k kernels.
+\item \textbf{Exact top-k is not cheap compared with the matmul that produces the scores.} Estimated from the published peak of TPU v4~\cite{jouppi2023tpuv4}, each TC performs 4 $\times$ 128 $\times$ 128 bf16 multiply-adds per cycle, so producing a \code{[128,\allowbreak{}128]} block of scores takes about 32 cycles for dimension d = 128 and about 1024 cycles for d = 4096; our fastest top 8 of such a block takes 802 cycles (Section~\ref{sec:6.5}). So the judgment of TPU-KNN~\cite{chern2022tpuknn} still holds in its setting: nearest-neighbor search has small dimensions and large data, exact selection is more than an order of magnitude more expensive than the matmul, and approximate algorithms are needed there, though both stages of the approximate algorithm can also use our formulations (Section~\ref{sec:8.3}). MoE routing is a different situation: for Qwen3-235B-A22B, with hidden dimension 4096 and top 8 of 128 experts~\cite{qwen3,qwen3-config}, the routing matmul and the top-k take cycles of the same order, so the top-k formulation directly affects the time of the routing kernel, consistent with the proportion SonicMoE~\cite{guo2026sonicmoe} observed on GPU. This is only an estimate from peak numbers; we did not measure a complete routing kernel.
+\item \textbf{The definition of correctness should start from bit patterns.} Numerical conventions such as ``NaN is the maximum'' and ``$-$0 equals +0'' do not match the actual behavior of native XLA; with the total order of bit patterns as the definition, special values are no longer special cases, and comparisons on integer keys are both simple and free of NaN loss.
+\end{itemize}
+
+\subsection{Recommendations for Upstream}
+\label{sec:9.2}
+
+On correctness, for Pallas's \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl}: reselection of selected positions can be fixed with the lifting of Section~\ref{sec:4.7}, which adds only one reduction off the chain, so the concern that ``fixing is expensive'' does not hold; for bitwise agreement with native XLA, the integer keys and segment encoding of Section~\ref{sec:4.9} can be adopted, at a cost of 32 cycles on the basic shape. For the argmax Mosaic generates: it loses NaNs with several lane tiles and along sublanes (Section~\ref{sec:4.2}) because the value and the index are chosen by two different comparisons; it should use one comparison to choose both. As for which index is returned on ties, the description in JAX \#34620 holds only for a single lane tile, and the rule should be unified in the documentation or the implementation.
+
+On the compiler, in order of benefit on fold-and-rank: correct the XLU occupancy after a transpose in the latency table; register the IARs as registers with dependences instead of memory barriers; assign XLU queues and IAR numbers at scheduling time; and enable sublane gather on TPU v4 and provide a TPU dialect op for each of \code{vsxpose}, \code{vld.\allowbreak{}sshfl}, and \code{vst.\allowbreak{}iar}. The first three are independent of top-k and affect any kernel that uses transposes and indexed loads and stores, but we have not measured them on other kernels. In addition, Pin's coloring should propagate into fusions, and the public \code{jax.\allowbreak{}ref.\allowbreak{}new\_\allowbreak{}ref(\allowbreak{}.\allowbreak{}.\allowbreak{}.\allowbreak{},\allowbreak{} pin=\allowbreak{}True)} should pass the target memory space to Pin (Section~\ref{sec:3.4}).
+
+\subsection{Limitations}
+\label{sec:9.3}
+
+\begin{itemize}
+\item \textbf{Experiments only on TPU v4 with libtpu 0.0.49.} TPU v4 is the only hardware available to us, so we could not experiment on newer generations; the latencies were measured with this version, and the patch addresses are hard-coded in the scripts. Most of our conclusions, however, do not depend on these specific numbers: the official \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl} is the same source for all generations, and the definition and checking of correctness in Section~\ref{sec:4} are hardware-independent; the performance analysis is organized by bottleneck, and the basic structure of the TensorCore has stayed stable across the five generations from TPU v2 to TPU v7x (Ironwood), always issuing VLIW bundles~\cite{jouppi2026ironwood}; vector registers are 8 $\times$ 128 from TPU v2 to v5p and grow to 16 $\times$ 256 only in TPU v7x~\cite{jouppi2026ironwood}. In the instruction index tpuasm derives from the TPU v6e libtpu~\cite{tpuasm}, cross-lane reductions, rotations, and transposes are likewise 8 $\times$ 128 push-pop instructions. So the judgment of which algorithm suits which case can largely carry over, while generations with a different register shape need to be rechecked. On a new generation, the instruction latencies must be remeasured with the methods of Sections~\ref{sec:3.1} to \ref{sec:3.3}, the instructions used must be confirmed to still exist, and the patches must be relocated.
+\item \textbf{Only f32 is covered.} This is the only type Pallas top-k accepts on TPU v4: its lowering accepts only f32 and \code{bfloat16}, and the latter requires TPU v6 or newer.
+\item \textbf{Only single-TC algorithms are considered.} Pallas kernels can themselves be written as programs running in parallel on several TCs or even several chips; we study only the basic case of a single TC and do not consider multi-core formulations. When work is split across TCs by rows, each TC still faces the case studied here, and our results apply directly; splitting the same row across TCs requires exchanging and merging partial results between TCs, which is a different problem.
+\item \textbf{Only computation on data already in TC VMEM is discussed.} Transfers between TC VMEM and HBM are not covered. In-kernel top-k usually follows other computation with the data already in TC VMEM, and transfers are determined by other parts of the kernel (Section~\ref{sec:3.5}).
+\item \textbf{No faster formulation for very small k or rows narrower than 128.} For k from 1 to 4 and row width 128, our correct formulations are all slower than official (Section~\ref{sec:8.1}, Table~\ref{tab:10}); shapes with rows narrower than 128 were only checked for correctness, and their cycles were not measured. MoE routing with top 1 or top 2 falls exactly in this range.
+\item \textbf{Rows wider than 8192 and more than 256 rows were not measured.} The inputs measured range from one TC VREG to 256 KiB; in-kernel top-k processes a block that fits in TC VMEM, usually of this magnitude. By the analysis framework of Section~\ref{sec:2.2}, larger shapes only have more TC VREGs and the kinds of bottlenecks stay the same, but the ratios between formulations need separate measurement.
+\item \textbf{The stable entry point was not enabled.} \code{is\_\allowbreak{}stable=\allowbreak{}True} still raises an error in Pallas. Whether to enable it is an upstream interface decision that we did not change; rank counting and fold-and-rank already give stable results and can be used directly if it is enabled.
+\item \textbf{Fold-and-rank relies on in-process patches.} It has an advantage only with few rows, and its two fastest forms rely on in-process patches, which are not a form that can be merged upstream directly: the instructions it uses are not emitted by the compiler today, and since libtpu is not open source, we can only add them in process to show that the path works; the real change must be made upstream (Section~\ref{sec:9.2}). Two entries for native XLA in the three-way comparison also rely on an in-process fix to compile, and that bug appears only when the endpoints are fixed to TC VMEM (Section~\ref{sec:3.4}), without affecting XLA's default use.
+\item \textbf{The loser tree is only partly done.} The transpose with a loser tree in Section~\ref{sec:6} covers only k of 8 and 16 and at most 128 rows, and the merge is a handwritten fragment. This is exactly the range left after Section~\ref{sec:5}: cases with more rows or larger k are already faster than both baselines in Section~\ref{sec:5}, and the full transpose puts each row in one lane, holding at most 128 rows at a time. Why the merge can only be handwritten is explained in Section~\ref{sec:7.5}. The candidate levels in the vertical direction could also be changed to an indexed-load merge, which we did not do.
+\item \textbf{The timing inputs are random permutations without ties.} Our formulations have no data-dependent branches, and native XLA has them only for top 8 of \code{[8,\allowbreak{}4096]}, differing by 2 cycles (Section~\ref{sec:3.4}), so a different input distribution does not change our comparisons.
+\item \textbf{No formulation is proved fastest.} All our speedups are relative to the two baselines; latency lower bounds are given only for the class of XLU-chain algorithms (Sections~\ref{sec:6.1} and \ref{sec:8.2}), not for all algorithms.
+\end{itemize}
+
+\section{Related Work}
+\label{sec:10}
+
+\textbf{Exact top-k on GPUs.} Shanbhag et al.~\cite{shanbhag2018} were the first to study top-k on GPUs systematically and proposed bitonic top-k: partial bitonic sorting produces sorted runs of length k, which are merged pairwise while discarding the smaller half until only k remain; for k up to 256 it is up to 15 times faster than a full sort. Faiss's WarpSelect~\cite{johnson2021faiss} keeps all candidates in registers, performs compare-exchanges with warp shuffles, can be fused with the kernel producing the data, and supports k $\le$ 1024. Dr. Top-k~\cite{gaihre2021drtopk} divides the input into subranges and takes the maximum of each as a delegate, so that only subranges whose delegates enter the top k need to be examined, removing most of the work; RadiK~\cite{li2024radik} switches to radix selection so that k is no longer limited by on-chip memory capacity; Zhang et al.'s~\cite{zhang2023air} AIR Top-K fuses the passes of radix selection into one kernel and adaptively reduces memory traffic according to the data distribution, while GridSelect maintains a candidate queue as data is read in. These works deal with large arrays in GPU global memory, with evaluations of Shanbhag et al., Dr. Top-k, and RadiK reaching 2$^{29}$ to 2$^{30}$ elements, and aim to reduce memory traffic and work. Radix selection always first turns floating-point numbers into comparable integers, using the same conditional XOR as Section~\ref{sec:4.9}~\cite{herf2001radix}. Our input is already in TC VMEM as an in-kernel block, and the bottlenecks are the on-chip resources of Section~\ref{sec:2.2}, above all the XLU round-trip latency. None of these papers discuss NaN.
+
+\textbf{Row-wise top-k over short rows.} Top-k in neural networks is often taken row by row over a matrix with short rows, the setting closest to ours. RTop-K~\cite{xie2025rtopk} determines a threshold per row by binary search, evaluated with row lengths of 256 to 768 and k of 16 to 128; with threshold precision $\epsilon$ = 0 the result is exact, and there is also an approximate mode with early stopping, compared against PyTorch's \code{torch.\allowbreak{}topk}. SonicMoE~\cite{guo2026sonicmoe} reports that \code{torch.\allowbreak{}topk} takes about 40\% of routing computation time in MoE and writes a dedicated kernel for E $\le$ 4096 and K $\le$ 16: each row is bitonic-sorted, and before sorting the column index is written into the low log2(E) bits of the f32 mantissa, so there are no equal keys and the result is always stable. By the definition of Section~\ref{sec:4.4}, this no longer compares the original values: elements differing only in these bits are ordered by column index rather than by value. The official Tilelang example that paper compares against takes the maximum round by round, the same structure as official Pallas, and the paper considers it better suited to very small K. The cost model of Key et al.~\cite{key2024approx} also lists k rounds of scanning for the maximum (ScanMax) as the exact algorithm for small k on parallel machines. We answer on TPU how such round-by-round maximum formulations can be made correct (Section~\ref{sec:4}) and when they are already close to the hardware limit (Section~\ref{sec:6.1}).
+
+\textbf{Top-k on TPU.} TPU-KNN~\cite{chern2022tpuknn} analyzes the instruction budget of top-k fused with a matmul: on TPU v4 with dimension 128, each dot product can afford only about 4 elementwise instructions, from which it concludes that exact, general k-selection cannot be implemented efficiently, and it adopts a two-stage approximate algorithm instead: first bucket and take the maximum of each bucket, then bitonic-sort the candidates and take the top k; this is JAX's \code{approx\_\allowbreak{}max\_\allowbreak{}k}. Samaga et al.~\cite{samaga2026} report that on TPU v5e, using \code{jax.\allowbreak{}lax.\allowbreak{}top\_\allowbreak{}k} to find the top 2\% of the feed-forward activations of Gemma 2 9B takes 27 times as long as the matmul that produces those activations; they generalize the first stage to take the top K$'$ per bucket, implemented in Pallas. Key et al.~\cite{key2024approx} study the same class of bucketed algorithms on GPU. These works trade recall for parallelism, while we study exact, bitwise-correct top-k. The two do not conflict: the second stage of a two-stage algorithm is still an exact top-k over the candidates, and Pallas's \code{approx\_\allowbreak{}max\_\allowbreak{}k} in JAX first buckets and then calls official Pallas's top-k on the candidates. Section~\ref{sec:8.3} puts our formulations into both of its stages, and Section~\ref{sec:9.1} estimates the relative cost of exact top-k and the matmul that produces the scores. Dr. Top-k's delegates resemble the structure of the first stage, but it goes back to examine the selected subranges, so its result is exact.
+
+\textbf{In-register sorting networks.} Comparison-network sorting and odd-even merging come from Batcher~\cite{batcher1968}; we apply them to the same position across different TC VREGs, pruned backward to the first k outputs. The same approach exists on CPU SIMD: the in-register sort of Chhugani et al.~\cite{chhugani2008} first compares lane by lane across K registers to sort the values within each lane and then transposes with a series of shuffles; vqsort~\cite{wassenberg2022vqsort} first sorts the columns and then merges directly with bitonic merges, avoiding the transpose. The transpose-then-merge-along-sublanes approach of Sections~\ref{sec:5.4} and \ref{sec:6.3} shares this origin. The difference is that on TPU the transpose goes through an XLU round trip (Table~\ref{tab:3}), so whether a transpose is worthwhile depends on whether the number of rows amortizes this fixed cost. Rank counting is enumeration sort~\cite{knuth1998} implemented with rotations, and the loser tree comes from external merging~\cite{knuth1998}; our contribution is not these algorithms themselves, but finding which resource limits each of them on TPU and how to put them on the right units with segmented transposes and indexed loads and stores.
+
+\textbf{Floating-point total order and upstream issues.} Our definition of correctness is the IEEE 754 \code{total\allowbreak{}Order}~\cite{ieee754}, with which the total order XLA defines for comparisons~\cite{xla-compare} agrees. Pallas's argmax behavior on ties already has an upstream issue~\cite{jax-issue-34620}; we add the rules for several lane tiles and along sublanes and point out the loss of NaN.
+
+\textbf{Instruction-set reverse engineering and instruction-level optimization.} GPU vendors do not publish their machine instruction sets either. Jia et al.~\cite{jia2018volta} derived Volta's instruction encoding, control information, and latencies with microbenchmarks and disassembly, and rewrote register allocation at the binary level to make a kernel representing a matmul inner loop 15.4\% faster; Hayes et al.~\cite{hayes2019decoding} systematically decoded the instruction sets of several generations of NVIDIA GPUs and generated assemblers from them. uops.info~\cite{abel2019uops} measures the latency, throughput, and port usage of x86 instructions with automatically generated microbenchmarks, provides them in machine-readable form to compilers and performance-prediction tools, and pointed out errors in existing documentation. SIP~\cite{he2024sip} and CuAsmRL~\cite{he2025cuasmrl} search for better instruction schedules on compiled SASS, using measured run time as feedback. Writing assemblers for GPUs to tune machine programs directly also has precedents such as KeplerAs~\cite{zhang2017kepleras}, maxas~\cite{maxas}, and TuringAs~\cite{turingas}. On TPU, Kaufman et al.~\cite{kaufman2021} predict kernel run time from XLA program graphs with a learned model, serving tile-size and fusion decisions at the granularity of whole kernels, without instruction-level latencies. We do the corresponding things on TPU. Previously, the means of observing TPU compilation results was the LLO text the compiler prints, which cannot be mapped unambiguously to machine instructions or assembled back; our tpuasm~\cite{tpuasm} works directly on machine programs and underlies all our instruction-level experiments (Section~\ref{sec:3.1}). Instruction semantics and latencies are determined by on-device experiments (Sections~\ref{sec:3.2} and \ref{sec:3.3}), and the transpose- and IAR-related waits among them are either missing from the compiler's latency table or too small there. Rescheduling after compilation does not search but fills bundles cycle by cycle with a timing model built from measured latencies (Section~\ref{sec:7.2}); Section~\ref{sec:7.3} then adds the measured latencies to the compiler's own latency table.
+
+\textbf{TPU architecture.} Public material on TPUs stops at the architecture level. Norrie et al.~\cite{norrie2021tpuv2} describe the TensorCore of TPU v2: the scalar unit fetches 322-bit VLIW bundles (see also~\cite{jouppi2026ironwood}), the vector unit has 128 lanes with 8 sublanes each, results of the matrix unit go into a Result FIFO and are popped by dedicated slots, and another group of units performs transposes, row reductions, and lane permutations. Jouppi et al.~\cite{jouppi2023tpuv4} give the parameters of TPU v4: each TC has 4 MXUs and 16 MiB of VMEM, and the two TCs share 128 MiB of CMEM, consistent with the measurements of Appendix~\ref{sec:C.1}. Jouppi et al.~\cite{jouppi2026ironwood} review the evolution across the five generations from TPU v2 to TPU v7x and argue that the basic structure of the TensorCore has stayed stable (Section~\ref{sec:9.3}). None of these give instruction encodings, semantics, or latencies; all instruction-level information in this paper comes from libtpu itself and from on-device experiments.
+
+\section{Conclusion}
+\label{sec:11}
+
+This paper tested a premise of JAX's official Pallas top-k: that correctness and speed cannot be had together. With bitwise correctness defined by the IEEE 754 \code{total\allowbreak{}Order}, the official implementation's errors go far beyond the duplicate indices admitted in its comment, and fixing them makes the basic shape only 4.7\% slower. Beyond that, we choose formulations by the XLU round-trip latency, the XLU issue interval, and the number of vector ALU instructions: using only Pallas source, we are faster than the official implementation on 20 of the 25 selected shapes; after changing the path of the chain where the official serial chain is already close to the XLU latency bound, the number of shapes faster than the official implementation rises to 24, and all shapes are faster than native XLA. The hardest part relies on instructions the compiler does not currently emit; for fold-and-rank, after wrapping these instructions as primitives and adding the missing pipeline entry points and scheduler latencies in process, the compiler generates a program close to handwritten speed, and one more reordering by measured latencies makes it faster than the handwritten version. The case of very small k still has no faster formulation. Pallas's top-k should therefore be fixed, and the compiler should gain these few instructions and accurate latencies (Section~\ref{sec:9.2}). tpuasm and our methods for measuring semantics and latencies are not limited to top-k and can be used for other work that needs to understand TPUs at the instruction level.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\appendix
+
+\section{Environment and Reproduction}
+\label{sec:A}
+
+Python 3.14.7t, JAX \code{0.\allowbreak{}12.\allowbreak{}0.\allowbreak{}dev20261002+7fc69a22c2}, jaxlib \code{0.\allowbreak{}12.\allowbreak{}0.\allowbreak{}dev20261002}, libtpu \code{0.\allowbreak{}0.\allowbreak{}49}, tpuasm \code{0.\allowbreak{}2.\allowbreak{}1}. The whole machine has the topology TPU v4 (2x2x2), with 2 hosts of 4 chips each; our experiments use only one chip local to host 0. \code{chip.\allowbreak{}py} exposes the two TCs of this chip as two devices, and the experiments use only one of them; the environment variable \code{TOP\_\allowbreak{}K\_\allowbreak{}CHIP} selects the local chip, and processes on different chips can run at the same time.
+
+The repository also contains a Chinese version of this paper, \code{report.\allowbreak{}md}, which \code{tables.\allowbreak{}py} generates from \code{report.\allowbreak{}template.\allowbreak{}md} and \code{results/\allowbreak{}}; this paper is a translation of it. Run in the root of the repository:
+
+\begin{figure*}
+\begin{lstlisting}
+python compare.py check --output /tmp/top-k-paper/check          # Tables 4 and 22
+python compare.py fix --output /tmp/top-k-paper/fix              # Table 5, Appendix C.4
+python compare.py rows --output /tmp/top-k-paper/rows            # Table 9
+python compare.py ks --output /tmp/top-k-paper/ks                # Table 10
+python compare.py time --output /tmp/top-k-paper/time            # Tables 6, 7, 8, and 11
+python folded_select.py shell /tmp/top-k-paper/handwritten.json  # Table 12
+python folded_interval.py placeholder --rows 8                   # Table 16, one process per compilation configuration
+python folded_interval.py rescheduled --rows 8
+python folded_interval.py compiler                               # Tables 16 and 17
+python folded_interval.py reorder
+python transpose_merge.py 8 9 10 ... 128 --output /tmp/top-k-paper/transpose   # Tables 13 and 23, can be split across chips
+python transpose_merge.py --k 16 8 16 ... 128 --output /tmp/top-k-paper/transpose16   # Table 24
+python approx.py check --output /tmp/top-k-paper/approx          # Table 20
+python approx.py time --output /tmp/top-k-paper/approx           # Table 21
+python merge_profile.py 16 128                                   # instruction counts in Sections 6.3 and 6.5
+python memory_capacity.py                                        # Table 1
+python semantics.py                                              # Table 2
+python latency.py                                                # Table 3
+python clock_rate.py                                             # clock rate in Section 3.3
+python latency_probe.py compare.py time --cases basic32 --output /tmp/top-k-paper/probe   # the compiler's own latency table
+python tables.py                                                 # generate the tables in report.md from results/
+python figures.py                                                # generate the figures in figures/ from results/
+\end{lstlisting}
+\end{figure*}
+The raw records of each run are saved in \code{results/\allowbreak{}}, including the endpoint layouts, the instructions in the interval, and the DMAs of every timed program. The files are:
+
+\begin{table*}
+\centering
+\footnotesize
+\begin{tabular}{l>{\raggedright\arraybackslash}p{0.425\linewidth}}
+\toprule
+File & Contents \\
+\midrule
+\code{total\_\allowbreak{}order.\allowbreak{}py} & The bitwise-correct formulations and the general dispatcher \code{fast} \\
+\code{fixes.\allowbreak{}py} & The three fixes for reselection only: masking, lifting, and MXU suffix ranking \\
+\code{shell.\allowbreak{}py} & The harness starting and ending in TC VMEM, boundary checks, and timing \\
+\code{pin\_\allowbreak{}propagation.\allowbreak{}py}, \code{.\allowbreak{}cpp} & The in-process fix that adds memory-space propagation after Pin coloring \\
+\code{compare.\allowbreak{}py} & Timing and correctness of the three-way comparison \\
+\code{folded\_\allowbreak{}select.\allowbreak{}py} & Handwritten fold-and-rank \\
+\code{asm\_\allowbreak{}intrinsics.\allowbreak{}py}, \code{check\_\allowbreak{}intrinsics.\allowbreak{}py} & The four placeholder intrinsics, the rewriter, and their checks \\
+\code{folded\_\allowbreak{}top\_\allowbreak{}k.\allowbreak{}py}, \code{folded\_\allowbreak{}interval.\allowbreak{}py} & Fold-and-rank written with intrinsics, and its four compilation configurations in the harness \\
+\code{reschedule.\allowbreak{}py}, \code{issue\_\allowbreak{}profile.\allowbreak{}py} & The post-compilation rescheduling tool and the calibration of its timing model \\
+\code{transpose\_\allowbreak{}merge.\allowbreak{}py}, \code{merge\_\allowbreak{}profile.\allowbreak{}py} & Eight-way loser-tree merge after a full transpose; instruction counts of the two merges \\
+\code{libtpu\_\allowbreak{}patch.\allowbreak{}py}, \code{front\_\allowbreak{}door.\allowbreak{}py}, \code{vliw\_\allowbreak{}reorder.\allowbreak{}py}, two \code{.\allowbreak{}cpp} files & In-process libtpu patches, the four intrinsics emitted by the compilation pipeline, and the in-pipeline reorder \\
+\code{llo\_\allowbreak{}op\_\allowbreak{}probe.\allowbreak{}py}, \code{tpu\_\allowbreak{}op\_\allowbreak{}probe.\allowbreak{}py}, \code{ra\_\allowbreak{}cost.\allowbreak{}py} & Probes of the layers of the compilation pipeline, and the compiler's own register-pressure report \\
+\code{memory\_\allowbreak{}capacity.\allowbreak{}py} & Storage capacities: CMEM wraparound measurement and the HBM allocation limit \\
+\code{semantics.\allowbreak{}py}, \code{latency.\allowbreak{}py}, \code{latency\_\allowbreak{}probe.\allowbreak{}py} & Measured instruction semantics and latencies, and the compiler's latency table \\
+\code{tables.\allowbreak{}py}, \code{report.\allowbreak{}template.\allowbreak{}md} & The template of the Chinese report, and the script that fills in the numbers from \code{results/\allowbreak{}} \\
+\code{approx.\allowbreak{}py} & Pallas's and native XLA's \code{approx\_\allowbreak{}max\_\allowbreak{}k}, and our formulations in both of its stages \\
+\code{figures.\allowbreak{}py} & Generates the figures in \code{figures/\allowbreak{}} (Chinese) and \code{figures/\allowbreak{}en/\allowbreak{}} (English) from \code{results/\allowbreak{}} \\
+\code{clock\_\allowbreak{}rate.\allowbreak{}py} & The counting frequency of LCC \\
+\code{chip.\allowbreak{}py} & Selects the chip used by the process \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Hardware and Compiler Rules for Rewriting and Rescheduling}
+\label{sec:B}
+
+Each of these rules comes from a bug that actually happened, for reference by anyone writing new intrinsics or rewriters.
+
+\begin{enumerate}
+\item A placeholder must be a form the compiler can neither simplify nor reassociate with neighboring operations. An XOR with a unique immediate works; for two operands, use two different operations.
+\item A bundle may contain two instructions from the same placeholder (two ALU slots, two TC VREGs); handle them per instruction, not per bundle.
+\item Within a bundle, reads happen before writes, and the compiler lets other instructions in the bundle overwrite a register that has just been read. So rewritten instructions that read the placeholder's operands can only be placed in or before that bundle, and those that write the placeholder's result only in or after that bundle.
+\item Do not track a value by register name. The compiler may spill it, reload it into a different register, or copy it.
+\item A value that must go through TC VMEM should be stored right after it is actually computed, and each value only once.
+\item The two IARs are a resource the compiler does not know about; there may be more than two indexed loads in flight, so a fallback is needed when they do not fit, and the fallback must not assume the offsets are still in registers.
+\item XLU queues are first-in, first-out. When moving pushes or pops, keep the order on each queue, and a bundle cannot pop twice from the same queue.
+\item The only same-bundle ``read before write'' confirmed to work is on TC VREGs and masks. Reading an IAR and loading it with a new value in the same bundle does not work. Combinations without evidence are always separated.
+\item For an unmasked \code{vst.\allowbreak{}iar}, the destination rows of the 8 elements of a column must all differ; with a mask, an enabled element must not share a row with any element of a smaller sublane index (enabled or not). Violations halt the TensorCore with no other information.
+\item When a program computes something wrong, the TensorCore may halt instead of producing a wrong result: if ranks are wrong, \code{vst.\allowbreak{}iar} destination rows repeat. A halt does not mean the problem is in \code{vst.\allowbreak{}iar}.
+\item XLA assumes by default that the two IARs keep the values loaded at the start throughout the program. After a kernel changes the IARs, strided loads and stores that XLA itself generates in the same program read wrong offsets; programs containing only Pallas kernels do not have this problem.
+\item Correctness on small examples does not show that the rules are followed. The bugs of rules 3, 4, and 6 appeared only when registers were tight; every change must be rechecked with inputs of at least 16 rows.
+\end{enumerate}
+
+\section{Supplementary Material}
+\label{sec:C}
+
+Details omitted from the main text for continuity are collected here.
+
+\subsection{Capacities of CMEM and HBM}
+\label{sec:C.1}
+
+The capacities in Table~\ref{tab:1} come from \code{memory\_\allowbreak{}capacity.\allowbreak{}py}, with output in \code{results/\allowbreak{}memory-capacity.\allowbreak{}txt}. CMEM cannot be allocated by Pallas, so it can only be measured directly: it is addressed in 512 B granules, and the experiment writes a tile to address 0, writes its bitwise complement to address A, and reads both back. With A up to \code{0x3fff8} (the last tile) the two do not interfere, and with A at \code{0x40000} and \code{0x80000} address 0 is overwritten, so CMEM has \code{0x40000} granules, 128 MiB, consistent with public material~\cite{jouppi2023tpuv4}; addresses beyond the capacity do not raise errors but wrap around modulo \code{0x40000}. On the HBM side, \code{memory\_\allowbreak{}stats(\allowbreak{})} of both devices reports the same limit of 32745977856 bytes, the part of the 32 GiB~\cite{jouppi2023tpuv4} available to the runtime. The values \code{cmem\_\allowbreak{}capacity\_\allowbreak{}bytes=\allowbreak{}67000000} and \code{hbm\_\allowbreak{}capacity\_\allowbreak{}bytes=\allowbreak{}17200000000} reported by \code{pltpu.\allowbreak{}get\_\allowbreak{}tpu\_\allowbreak{}info(\allowbreak{})} are estimates of the chip totals hard-coded in JAX (\code{134\_\allowbreak{}000\_\allowbreak{}000} and \code{34\_\allowbreak{}400\_\allowbreak{}000\_\allowbreak{}000}) divided by the number of TCs, not a hardware partition, and the CMEM estimate also disagrees with the measurement. The capacities of TC VMEM and SMEM are those reported by \code{get\_\allowbreak{}tpu\_\allowbreak{}info(\allowbreak{})}.
+
+\subsection{A Compiler Bug in Native XLA and Its Fix}
+\label{sec:C.2}
+
+For two shapes, row width 256 with k = 8 and row width 1024 with k = 32, native XLA fails to compile in the harness of Section~\ref{sec:3.4}:
+
+\begin{lstlisting}
+Fused computation shape ((f32[8,8]{1,0:T(8,128)}, s32[8,8]{1,0:T(8,128)}))
+is not equal to the fusion shape ((f32[8,8]{1,0:T(8,128)S(1)}, s32[8,8]{1,0:T(8,128)S(1)}))
+\end{lstlisting}
+For these two shapes XLA fuses the sort and the selection of the first k columns into one \code{sort\_\allowbreak{}prefixfusion}. Saving HLO pass by pass shows that the \code{pin-precoloring} pass adds \code{S(\allowbreak{}1)} to the outside of the fusion but not to the root inside it, and the subsequent consistency check fails. Both ways around it change what is measured: disabling this fusion makes XLA fall back to an ordinary sort, so what is measured is no longer its default implementation; disabling precoloring puts the three endpoints in Megacore Shared CMEM. So we fix it instead: libtpu already contains a pass that propagates memory spaces along fusion parameters and roots (\code{Memory\allowbreak{}Space\allowbreak{}Propagation}, corresponding to the pass of the same name in open-source XLA~\cite{xla-memory-space-propagation}), and \code{pin\_\allowbreak{}propagation.\allowbreak{}py} calls it once after \code{Pin\allowbreak{}Precoloring} succeeds in recoloring, replacing only one vtable pointer in the process and restoring it on exit. The fix is installed only when the original compiler reports this error; after the fix these two shapes keep XLA's original fused implementation and are marked \ddag{} in the tables.
+
+\subsection{Official Pallas's Errors by Input Class}
+\label{sec:C.3}
+
+\begin{table*}
+\centering
+\caption{Official Pallas's errors by input class.}
+\label{tab:22}
+\footnotesize
+\begin{tabular}{lrrrrr}
+\toprule
+Input class & Inputs & \makecell[rb]{Index out\\of range} & \makecell[rb]{Duplicate\\index} & \makecell[rb]{Value and\\index\\unpaired} & \makecell[rb]{Bit-pattern\\sequence\\differs} \\
+\midrule
+Normal random numbers & 23760 & 0 & 0 & 0 & 0 \\
+Small-integer ties & 23760 & 0 & 0 & 0 & 0 \\
+Targeted counts of non-negative elements & 37212 & 0 & 0 & 0 & 0 \\
+Raw 32-bit patterns & 23760 & 0 & 186 & 4685 & 4685 \\
+Random mixtures of special bit patterns & 23760 & 150 & 12190 & 22612 & 22475 \\
+Constant bit patterns & 62370 & 1164 & 22538 & 38506 & 38506 \\
+Finite values at the last position & 2970 & 4 & 1930 & 1890 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Pairwise Extraction}
+\label{sec:C.4}
+
+The pairwise extraction of Section~\ref{sec:6.7} tries to select two places per XLU round trip. For each bit b of the index, split the 128 positions into halves where that bit is 0 and 1 and take the maximum of each, $A_{b}$ and $B_{b}$, fourteen independent reductions in all. First place is max($A_{0}$, $B_{0}$), and second place is $\max_{b}$ min($A_{b}$, $B_{b}$): the two halves of any split are disjoint, so the smaller of the two half maxima is at most second place; and the indices of first and second place differ in at least one bit, at which the two half maxima are exactly these two. So one XLU round trip gives two places, three give the top six, and the last two use the ordinary chain.
+
+The formula for values holds with ties, but the formula for recovering indices from them requires both places to be unique. So it must be checked, and when the check fails the whole TC VREG falls back to \code{phased}. In the timing interval, it takes 686 cycles when the check passes, on par with the official 685: the chain is shorter, but the masks of the fourteen halves and the fourteen reductions per round trip spend the saved cycles again. On fallback it takes 1362 cycles, twice official, triggered by inputs with only three finite values per row. This path has no benefit and carries an input-dependent worst case, so we do not adopt it.
+
+\subsection{Results for Every Number of Rows from 8 to 128}
+\label{sec:C.5}
+
+The numbers behind Figure~\ref{fig:5} are as follows.
+
+\begin{table}
+\centering
+\caption{Row width 128, k = 8, every number of rows from 8 to 128, grouped by number of TC VREGs.}
+\label{tab:23}
+\small
+\begin{tabular}{lrrr}
+\toprule
+Rows & \makecell[rb]{Transpose +\\loser tree} & \makecell[rb]{Official\\Pallas} & \makecell[rb]{Fewer cycles\\than official} \\
+\midrule
+8 & 677 & 685 & 1.2\% \\
+9--16 & 685 & 704--713 & 2.7\%--3.9\% \\
+17--24 & 693 & 718--740 & 3.5\%--6.4\% \\
+25--32 & 701 & 733--744 & 4.4\%--5.8\% \\
+33--40 & 712 & 744--753 & 4.3\%--5.4\% \\
+41--48 & 725 & 750--757 & 3.3\%--4.2\% \\
+49--56 & 733 & 757--765 & 3.2\%--4.2\% \\
+57--64 & 741 & 766--771 & 3.3\%--3.9\% \\
+65--72 & 749 & 774--783 & 3.2\%--4.3\% \\
+73--80 & 757 & 790--806 & 4.2\%--6.1\% \\
+81--88 & 765 & 860--861 & 11.0\%--11.1\% \\
+89--96 & 773 & 924--925 & 16.3\%--16.4\% \\
+97--104 & 781 & 998--1000 & 21.7\%--21.9\% \\
+105--112 & 789 & 1073--1077 & 26.5\%--26.7\% \\
+113--120 & 797 & 1150--1156 & 30.7\%--31.1\% \\
+121--128 & 802--805 & 1235--1237 & 34.8\%--35.1\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}
+\centering
+\caption{Row width 128, k = 16, along the last dimension: full transpose with a loser tree versus official Pallas.}
+\label{tab:24}
+\small
+\begin{tabular}{lrrr}
+\toprule
+Rows & \makecell[rb]{Official\\Pallas} & \makecell[rb]{Transpose +\\loser tree} & \makecell[rb]{vs.\\official\\Pallas} \\
+\midrule
+8 & 1341 & 856 & $-$36.2\% \\
+16 & 1360 & 864 & $-$36.5\% \\
+24 & 1375 & 872 & $-$36.6\% \\
+32 & 1393 & 880 & $-$36.8\% \\
+40 & 1409 & 891 & $-$36.8\% \\
+48 & 1430 & 904 & $-$36.8\% \\
+56 & 1449 & 912 & $-$37.1\% \\
+64 & 1475 & 920 & $-$37.6\% \\
+72 & 1521 & 928 & $-$39.0\% \\
+80 & 1538 & 936 & $-$39.1\% \\
+88 & 1681 & 944 & $-$43.8\% \\
+96 & 1829 & 952 & $-$47.9\% \\
+104 & 2001 & 960 & $-$52.0\% \\
+112 & 2174 & 968 & $-$55.5\% \\
+120 & 2342 & 976 & $-$58.3\% \\
+128 & 2510 & 980 & $-$61.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

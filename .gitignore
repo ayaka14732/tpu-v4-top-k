@@ -1,2 +1,11 @@
 __pycache__/
 *.py[cod]
+# paper/ 的编译产物与由 SVG 转出的图
+paper/*.pdf
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.cut
+paper/figures/
