@@ -244,7 +244,7 @@ This is broad verification, not a proof over all combinations of bit patterns; t
 
 This report addresses top-$k$ on a single chip and a single TensorCore and does not cover algorithms in which several cores cooperate; the experiments run on one TensorCore of one TPU v4 chip, with libtpu 0.0.49. Data types are limited to f32; top-$k$ in `bfloat16` requires newer hardware and is not covered.
 
-All information used in this report comes from publicly released software and experiments on real hardware, without any non-public hardware or compiler material: instruction names and encodings come from the libtpu release package itself, and instruction semantics and latencies are determined by experiment, as described in Sections 3.1 to 3.3. All code for this report is in this directory and depends only on JAX, libtpu, and tpuasm, the assembler we wrote for this work (Section 3.1); every table and figure has a corresponding script and raw record, listed in Appendix A. This report does not modify JAX or libtpu on disk: following the three deployment forms of Section 3.5, the formulations of Chapters 4 and 5 enter the public Pallas compilation path by replacing `_top_k_impl`; the handwritten fragments of Chapter 6 and some formulations of Chapter 7 rewrite compiled executables; and the patches of Chapter 7 affect only the libtpu already loaded in the process.
+All information used in this report comes from publicly released software and experiments on real hardware, without any non-public hardware or compiler material: instruction names and encodings come from the libtpu release package itself, and instruction semantics and latencies are determined by experiment, as described in Sections 3.1 to 3.3. All code for this report is in this directory and depends only on JAX, libtpu, and tpuasm, the assembler we wrote for this work (Section 3.1); every table and figure has a corresponding script and raw record; file descriptions and reproduction commands are documented in the repository README, and the experimental environment is given in Appendix A. This report does not modify JAX or libtpu on disk: following the three deployment forms of Section 3.5, the formulations of Chapters 4 and 5 enter the public Pallas compilation path by replacing `_top_k_impl`; the handwritten fragments of Chapter 6 and some formulations of Chapter 7 rewrite compiled executables; and the patches of Chapter 7 affect only the libtpu already loaded in the process.
 
 ## 4 Correctness: What Goes Wrong and What Fixing It Costs
 
@@ -948,31 +948,9 @@ Research supported with Cloud TPUs from Google's TPU Research Cloud (TRC).
 
 Python 3.14.7t, JAX `0.12.0.dev20261002+7fc69a22c2`, jaxlib `0.12.0.dev20261002`, libtpu `0.0.49`, tpuasm `0.2.1`. The whole machine has the topology TPU v4 (2x2x2), with 2 hosts of 4 chips each; our experiments use only one chip local to host 0. `chip.py` exposes the two TCs of this chip as two devices, and the experiments use only one of them; the environment variable `TOP_K_CHIP` selects the local chip, and processes on different chips can run at the same time.
 
-The Chinese version `report.md` is generated from `report.template.md` and `results/` by `tables.py`; this English version is a translation of it. Detailed reproduction commands, their correspondence to the tables, and instructions for generating the reports and paper are maintained in the repository README: <https://github.com/ayaka14732/tpu-v4-top-k/blob/main/README.md>.
+The Chinese version `report.md` is generated from `report.template.md` and `results/` by `tables.py`; this English version is a translation of it. File descriptions, reproduction commands, their correspondence to the tables, and instructions for generating the reports and paper are maintained in the repository README: <https://github.com/ayaka14732/tpu-v4-top-k/blob/main/README.md>.
 
-The raw records of each run are saved in `results/`, including the endpoint layouts, the instructions in the interval, and the DMAs of every timed program. The files are:
-
-| File | Contents |
-| --- | --- |
-| `total_order.py` | The bitwise-correct formulations and the general dispatcher `fast` |
-| `fixes.py` | The three fixes for reselection only: masking, lifting, and MXU suffix ranking |
-| `shell.py` | The harness starting and ending in TC VMEM, boundary checks, and timing |
-| `pin_propagation.py`, `.cpp` | The in-process fix that adds memory-space propagation after Pin coloring |
-| `compare.py` | Timing and correctness of the three-way comparison |
-| `folded_select.py` | Handwritten fold-and-rank |
-| `asm_intrinsics.py`, `check_intrinsics.py` | The four placeholder intrinsics, the rewriter, and their checks |
-| `folded_top_k.py`, `folded_interval.py` | Fold-and-rank written with intrinsics, and its four compilation configurations in the harness |
-| `reschedule.py`, `issue_profile.py` | The post-compilation rescheduling tool and the calibration of its timing model |
-| `transpose_merge.py`, `merge_profile.py` | Eight-way loser-tree merge after a full transpose; instruction counts of the two merges |
-| `libtpu_patch.py`, `front_door.py`, `vliw_reorder.py`, two `.cpp` files | In-process libtpu patches, the four intrinsics emitted by the compilation pipeline, and the in-pipeline reorder |
-| `llo_op_probe.py`, `tpu_op_probe.py`, `ra_cost.py` | Probes of the layers of the compilation pipeline, and the compiler's own register-pressure report |
-| `memory_capacity.py` | Storage capacities: CMEM wraparound measurement and the HBM allocation limit |
-| `semantics.py`, `latency.py`, `latency_probe.py` | Measured instruction semantics and latencies, and the compiler's latency table |
-| `tables.py`, `report.template.md` | The template of the Chinese report, and the script that fills in the numbers from `results/` |
-| `approx.py` | Pallas's and native XLA's `approx_max_k`, and our formulations in both of its stages |
-| `figures.py` | Generates the figures in `figures/` (Chinese) and `figures/en/` (English) from `results/` |
-| `clock_rate.py` | The counting frequency of LCC |
-| `chip.py` | Selects the chip used by the process |
+The raw records of each run are saved in `results/`, including the endpoint layouts, the instructions in the interval, and the DMAs of every timed program.
 
 ## Appendix B Hardware and Compiler Rules for Rewriting and Rescheduling
 

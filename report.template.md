@@ -244,7 +244,7 @@ def program(x):
 
 本文只解决单芯片、单个 TensorCore 上的 top-$k$，不涉及多个 core 协作的算法；实验在 TPU v4 的一颗芯片、一个 TensorCore 上进行，libtpu 版本为 0.0.49。数据类型限定为 f32；`bfloat16` 的 top-$k$ 需要更新的硬件，没有覆盖。
 
-本文用到的全部信息都来自公开发行的软件和在真机上做的实验，没有使用任何未公开的硬件或编译器资料：指令的名字和编码来自 libtpu 的发行包本身，指令的语义和延迟由实验确定，3.1 至 3.3 节说明具体的做法。本文的全部代码在本目录中，只依赖 JAX、libtpu 和本文为这项工作写的汇编器 tpuasm（3.1 节）；每张表和图都有对应的脚本和原始记录，见附录 A。本文不修改磁盘上的 JAX 或 libtpu：按 3.5 节的三种部署形式，第 4、5 章的写法通过替换 `_top_k_impl` 进入公开的 Pallas 编译路径；第 6 章的手写片段和第 7 章的一部分写法改写编译出的 executable；第 7 章的补丁只作用于进程内已经装载的 libtpu。
+本文用到的全部信息都来自公开发行的软件和在真机上做的实验，没有使用任何未公开的硬件或编译器资料：指令的名字和编码来自 libtpu 的发行包本身，指令的语义和延迟由实验确定，3.1 至 3.3 节说明具体的做法。本文的全部代码在本目录中，只依赖 JAX、libtpu 和本文为这项工作写的汇编器 tpuasm（3.1 节）；每张表和图都有对应的脚本和原始记录，文件用途和复现命令列在仓库 README 中，实验环境见附录 A。本文不修改磁盘上的 JAX 或 libtpu：按 3.5 节的三种部署形式，第 4、5 章的写法通过替换 `_top_k_impl` 进入公开的 Pallas 编译路径；第 6 章的手写片段和第 7 章的一部分写法改写编译出的 executable；第 7 章的补丁只作用于进程内已经装载的 libtpu。
 
 ## 4 正确性：错在哪里，修正要多少周期
 
@@ -844,31 +844,9 @@ TPU-KNN [17] 的两阶段近似算法在 Pallas 中也有实现。kernel 中调�
 
 Python 3.14.7t，JAX `0.12.0.dev20261002+7fc69a22c2`，jaxlib `0.12.0.dev20261002`，libtpu `0.0.49`，tpuasm `0.2.1`；机器整体拓扑为 TPU v4 (2x2x2)，包含 2 个 host，每个 host 有 4 颗芯片；本文的实验只使用 host 0 本地的一颗芯片。`chip.py` 让这颗芯片的两个 TC 各作为一个设备出现，实验只用其中一个；环境变量 `TOP_K_CHIP` 选择本地芯片，不同芯片上的进程可以同时运行。
 
-完整复现命令、它们与正文各表的对应关系，以及报告和论文的生成方法，见仓库 README：<https://github.com/ayaka14732/tpu-v4-top-k/blob/main/README.md>。
+各文件的用途、完整复现命令及其与正文各表的对应关系，以及报告和论文的生成方法，见仓库 README：<https://github.com/ayaka14732/tpu-v4-top-k/blob/main/README.md>。
 
-各次运行的原始记录保存在 `results/`，包含每个计时程序的端点布局、区间内的指令和 DMA。各文件的作用：
-
-| 文件 | 内容 |
-| --- | --- |
-| `total_order.py` | 逐位正确的各种写法与通用分派 `fast` |
-| `fixes.py` | 只修重选的三种写法：掩码、抬高、MXU 后缀补位 |
-| `shell.py` | 起终点都在 TC VMEM 的外壳、边界核对与计时 |
-| `pin_propagation.py`、`.cpp` | Pin 着色之后补上内存空间传播的进程内修复 |
-| `compare.py` | 三方对照的计时与正确性 |
-| `folded_select.py` | 手写的折叠后数秩 |
-| `asm_intrinsics.py`、`check_intrinsics.py` | 四个占位 intrinsic、改写器及其核对 |
-| `folded_top_k.py`、`folded_interval.py` | 用 intrinsic 写的折叠后数秩，及其在外壳中的四种编译方式 |
-| `reschedule.py`、`issue_profile.py` | 编译之后的重排工具与时序模型的校准 |
-| `transpose_merge.py`、`merge_profile.py` | 整体转置之后用败者树做八路合并；两种合并的指令条数 |
-| `libtpu_patch.py`、`front_door.py`、`vliw_reorder.py`、两个 `.cpp` | 进程内给 libtpu 打的补丁、由编译流程生成的四个 intrinsic、流程内的重排 |
-| `llo_op_probe.py`、`tpu_op_probe.py`、`ra_cost.py` | 编译链路各层的探针，以及编译器自己的寄存器压力报告 |
-| `memory_capacity.py` | 各层存储的容量：CMEM 的回绕实测与 HBM 的分配上限 |
-| `semantics.py`、`latency.py`、`latency_probe.py` | 指令语义、延迟的实测，以及编译器的延迟表 |
-| `tables.py`、`report.template.md` | 正文的模板，以及把 `results/` 中的数字填进模板的脚本 |
-| `approx.py` | Pallas 与原生 XLA 的 `approx_max_k`，以及把本文的写法放进它的两个阶段 |
-| `figures.py` | 由 `results/` 生成 `figures/` 中的图 |
-| `clock_rate.py` | LCC 的计数频率 |
-| `chip.py` | 选择本进程使用的芯片 |
+各次运行的原始记录保存在 `results/`，包含每个计时程序的端点布局、区间内的指令和 DMA。
 
 ## 附录 B 改写和重排时要守的硬件与编译器规则
 

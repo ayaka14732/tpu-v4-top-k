@@ -2,6 +2,30 @@
 
 本仓库包含 TPU v4 单个 TensorCore 上 top-$k$ 的算法实现、正确性检查、性能实验和论文源文件。阅读 [中文报告](report.md) 或 [英文报告](report.en.md)；论文的 LaTeX 源文件在 [paper/](paper/)。
 
+## 文件一览
+
+| 文件 | 内容 |
+| --- | --- |
+| [total_order.py](total_order.py) | 逐位正确的各种写法与通用分派 `fast` |
+| [fixes.py](fixes.py) | 只修重选的三种写法：掩码、抬高、MXU 后缀补位 |
+| [shell.py](shell.py) | 起终点都在 TC VMEM 的外壳、边界核对与计时 |
+| [pin_propagation.py](pin_propagation.py)、[pin_propagation.cpp](pin_propagation.cpp) | Pin 着色之后补上内存空间传播的进程内修复 |
+| [compare.py](compare.py) | 三方对照的计时与正确性 |
+| [folded_select.py](folded_select.py) | 手写的折叠后数秩 |
+| [asm_intrinsics.py](asm_intrinsics.py)、[check_intrinsics.py](check_intrinsics.py) | 四个占位 intrinsic、改写器及其核对 |
+| [folded_top_k.py](folded_top_k.py)、[folded_interval.py](folded_interval.py) | 用 intrinsic 写的折叠后数秩，及其在外壳中的四种编译方式 |
+| [reschedule.py](reschedule.py)、[issue_profile.py](issue_profile.py) | 编译之后的重排工具与时序模型的校准 |
+| [transpose_merge.py](transpose_merge.py)、[merge_profile.py](merge_profile.py) | 整体转置之后用败者树做八路合并；两种合并的指令条数 |
+| [libtpu_patch.py](libtpu_patch.py)、[front_door.py](front_door.py)、[vliw_reorder.py](vliw_reorder.py)、[libtpu_latency.cpp](libtpu_latency.cpp)、[libtpu_sublane_gather.cpp](libtpu_sublane_gather.cpp) | 进程内给 libtpu 打的补丁、由编译流程生成的四个 intrinsic、流程内的重排 |
+| [llo_op_probe.py](llo_op_probe.py)、[tpu_op_probe.py](tpu_op_probe.py)、[ra_cost.py](ra_cost.py) | 编译链路各层的探针，以及编译器自己的寄存器压力报告 |
+| [memory_capacity.py](memory_capacity.py) | 各层存储的容量：CMEM 的回绕实测与 HBM 的分配上限 |
+| [semantics.py](semantics.py)、[latency.py](latency.py)、[latency_probe.py](latency_probe.py) | 指令语义、延迟的实测，以及编译器的延迟表 |
+| [tables.py](tables.py)、[report.template.md](report.template.md) | 正文的模板，以及把 `results/` 中的数字填进模板的脚本 |
+| [approx.py](approx.py) | Pallas 与原生 XLA 的 `approx_max_k`，以及把本文的写法放进它的两个阶段 |
+| [figures.py](figures.py) | 由 `results/` 生成 `figures/`（中文）与 `figures/en/`（英文）中的图 |
+| [clock_rate.py](clock_rate.py) | LCC 的计数频率 |
+| [chip.py](chip.py) | 选择本进程使用的芯片 |
+
 ## 实验环境
 
 论文使用 Python 3.14.7t、JAX `0.12.0.dev20261002+7fc69a22c2`、jaxlib `0.12.0.dev20261002`、libtpu `0.0.49` 和 tpuasm `0.2.1`。机器拓扑为 TPU v4 (2x2x2)，包含 2 个 host，每个 host 有 4 颗芯片；实验只使用 host 0 本地一颗芯片的一个 TensorCore。

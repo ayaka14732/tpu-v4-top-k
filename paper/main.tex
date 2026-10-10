@@ -319,7 +319,7 @@ This is broad verification, not a proof over all combinations of bit patterns; t
 
 This paper addresses top-$k$ on a single chip and a single TensorCore and does not cover algorithms in which several cores cooperate; the experiments run on one TensorCore of one TPU v4 chip, with libtpu 0.0.49. Data types are limited to f32; top-$k$ in \code{bfloat16} requires newer hardware and is not covered.
 
-All information used in this paper comes from publicly released software and experiments on real hardware, without any non-public hardware or compiler material: instruction names and encodings come from the libtpu release package itself, and instruction semantics and latencies are determined by experiment, as described in Sections~\ref{sec:3.1} to \ref{sec:3.3}. All code for this paper is available at \url{https://github.com/ayaka14732/tpu-v4-top-k} and depends only on JAX, libtpu, and tpuasm, the assembler we wrote for this work (Section~\ref{sec:3.1}); every table and figure has a corresponding script and raw record, listed in Appendix~\ref{sec:A}. This paper does not modify JAX or libtpu on disk: following the three deployment forms of Section~\ref{sec:3.5}, the formulations of Sections~\ref{sec:4} and \ref{sec:5} enter the public Pallas compilation path by replacing \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl}; the handwritten fragments of Section~\ref{sec:6} and some formulations of Section~\ref{sec:7} rewrite compiled executables; and the patches of Section~\ref{sec:7} affect only the libtpu already loaded in the process.
+All information used in this paper comes from publicly released software and experiments on real hardware, without any non-public hardware or compiler material: instruction names and encodings come from the libtpu release package itself, and instruction semantics and latencies are determined by experiment, as described in Sections~\ref{sec:3.1} to \ref{sec:3.3}. All code for this paper is available at \url{https://github.com/ayaka14732/tpu-v4-top-k} and depends only on JAX, libtpu, and tpuasm, the assembler we wrote for this work (Section~\ref{sec:3.1}); every table and figure has a corresponding script and raw record; file descriptions and reproduction commands are documented in the repository README, and the experimental environment is given in Appendix~\ref{sec:A}. This paper does not modify JAX or libtpu on disk: following the three deployment forms of Section~\ref{sec:3.5}, the formulations of Sections~\ref{sec:4} and \ref{sec:5} enter the public Pallas compilation path by replacing \code{\_\allowbreak{}top\_\allowbreak{}k\_\allowbreak{}impl}; the handwritten fragments of Section~\ref{sec:6} and some formulations of Section~\ref{sec:7} rewrite compiled executables; and the patches of Section~\ref{sec:7} affect only the libtpu already loaded in the process.
 
 \section{Correctness: What Goes Wrong and What Fixing It Costs}
 \label{sec:4}
@@ -1205,39 +1205,9 @@ This paper tested a premise of JAX's official Pallas top-$k$: that correctness a
 
 Python 3.14.7t, JAX \code{0.\allowbreak{}12.\allowbreak{}0.\allowbreak{}dev20261002+7fc69a22c2}, jaxlib \code{0.\allowbreak{}12.\allowbreak{}0.\allowbreak{}dev20261002}, libtpu \code{0.\allowbreak{}0.\allowbreak{}49}, tpuasm \code{0.\allowbreak{}2.\allowbreak{}1}. The whole machine has the topology TPU v4 (2x2x2), with 2 hosts of 4 chips each; our experiments use only one chip local to host 0. \code{chip.\allowbreak{}py} exposes the two TCs of this chip as two devices, and the experiments use only one of them; the environment variable \code{TOP\_\allowbreak{}K\_\allowbreak{}CHIP} selects the local chip, and processes on different chips can run at the same time.
 
-The repository also contains a Chinese version of this paper, \code{report.\allowbreak{}md}, which \code{tables.\allowbreak{}py} generates from \code{report.\allowbreak{}template.\allowbreak{}md} and \code{results/\allowbreak{}}; this paper is a translation of it. Detailed reproduction commands, their correspondence to the tables, and instructions for generating the reports and paper are maintained in the repository README: \url{https://github.com/ayaka14732/tpu-v4-top-k/blob/main/README.md}.
+The repository also contains a Chinese version of this paper, \code{report.\allowbreak{}md}, which \code{tables.\allowbreak{}py} generates from \code{report.\allowbreak{}template.\allowbreak{}md} and \code{results/\allowbreak{}}; this paper is a translation of it. File descriptions, reproduction commands, their correspondence to the tables, and instructions for generating the reports and paper are maintained in the repository README: \url{https://github.com/ayaka14732/tpu-v4-top-k/blob/main/README.md}.
 
-The raw records of each run are saved in \code{results/\allowbreak{}}, including the endpoint layouts, the instructions in the interval, and the DMAs of every timed program. The files are:
-
-\begin{table*}
-\centering
-\footnotesize
-\begin{tabular}{l>{\raggedright\arraybackslash}p{0.450\linewidth}}
-\toprule
-File & Contents \\
-\midrule
-\code{total\_\allowbreak{}order.\allowbreak{}py} & The bitwise-correct formulations and the general dispatcher \code{fast} \\
-\code{fixes.\allowbreak{}py} & The three fixes for reselection only: masking, lifting, and MXU suffix ranking \\
-\code{shell.\allowbreak{}py} & The harness starting and ending in TC VMEM, boundary checks, and timing \\
-\code{pin\_\allowbreak{}propagation.\allowbreak{}py}, \code{.\allowbreak{}cpp} & The in-process fix that adds memory-space propagation after Pin coloring \\
-\code{compare.\allowbreak{}py} & Timing and correctness of the three-way comparison \\
-\code{folded\_\allowbreak{}select.\allowbreak{}py} & Handwritten fold-and-rank \\
-\code{asm\_\allowbreak{}intrinsics.\allowbreak{}py}, \code{check\_\allowbreak{}intrinsics.\allowbreak{}py} & The four placeholder intrinsics, the rewriter, and their checks \\
-\code{folded\_\allowbreak{}top\_\allowbreak{}k.\allowbreak{}py}, \code{folded\_\allowbreak{}interval.\allowbreak{}py} & Fold-and-rank written with intrinsics, and its four compilation configurations in the harness \\
-\code{reschedule.\allowbreak{}py}, \code{issue\_\allowbreak{}profile.\allowbreak{}py} & The post-compilation rescheduling tool and the calibration of its timing model \\
-\code{transpose\_\allowbreak{}merge.\allowbreak{}py}, \code{merge\_\allowbreak{}profile.\allowbreak{}py} & Eight-way loser-tree merge after a full transpose; instruction counts of the two merges \\
-\code{libtpu\_\allowbreak{}patch.\allowbreak{}py}, \code{front\_\allowbreak{}door.\allowbreak{}py}, \code{vliw\_\allowbreak{}reorder.\allowbreak{}py}, two \code{.\allowbreak{}cpp} files & In-process libtpu patches, the four intrinsics emitted by the compilation pipeline, and the in-pipeline reorder \\
-\code{llo\_\allowbreak{}op\_\allowbreak{}probe.\allowbreak{}py}, \code{tpu\_\allowbreak{}op\_\allowbreak{}probe.\allowbreak{}py}, \code{ra\_\allowbreak{}cost.\allowbreak{}py} & Probes of the layers of the compilation pipeline, and the compiler's own register-pressure report \\
-\code{memory\_\allowbreak{}capacity.\allowbreak{}py} & Storage capacities: CMEM wraparound measurement and the HBM allocation limit \\
-\code{semantics.\allowbreak{}py}, \code{latency.\allowbreak{}py}, \code{latency\_\allowbreak{}probe.\allowbreak{}py} & Measured instruction semantics and latencies, and the compiler's latency table \\
-\code{tables.\allowbreak{}py}, \code{report.\allowbreak{}template.\allowbreak{}md} & The template of the Chinese report, and the script that fills in the numbers from \code{results/\allowbreak{}} \\
-\code{approx.\allowbreak{}py} & Pallas's and native XLA's \code{approx\_\allowbreak{}max\_\allowbreak{}k}, and our formulations in both of its stages \\
-\code{figures.\allowbreak{}py} & Generates the figures in \code{figures/\allowbreak{}} (Chinese) and \code{figures/\allowbreak{}en/\allowbreak{}} (English) from \code{results/\allowbreak{}} \\
-\code{clock\_\allowbreak{}rate.\allowbreak{}py} & The counting frequency of LCC \\
-\code{chip.\allowbreak{}py} & Selects the chip used by the process \\
-\bottomrule
-\end{tabular}
-\end{table*}
+The raw records of each run are saved in \code{results/\allowbreak{}}, including the endpoint layouts, the instructions in the interval, and the DMAs of every timed program.
 
 \section{Hardware and Compiler Rules for Rewriting and Rescheduling}
 \label{sec:B}
