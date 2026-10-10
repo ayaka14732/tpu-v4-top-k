@@ -1,6 +1,8 @@
-# TPU v4 上逐位正确且更快的 Top-$k$
+# TPU v4 上逐位正确且更快的 Top-*k*
 
-本仓库包含 TPU v4 单个 TensorCore 上 top-$k$ 的算法实现、正确性检查、性能实验和论文源文件。阅读 [中文报告](report.md) 或 [英文报告](report.en.md)；论文的 LaTeX 源文件在 [paper/](paper/)。
+[English](README.en.md)
+
+本仓库包含 TPU v4 单个 TensorCore 上 top-*k* 的算法实现、正确性检查、性能实验和论文源文件。阅读 [中文报告](report.md) 或 [英文报告](report.en.md)；论文的 LaTeX 源文件在 [paper/](paper/)。论文的 PDF 发布在 Zenodo：<https://doi.org/10.5281/zenodo.23287738>。
 
 ## 文件一览
 
@@ -121,4 +123,17 @@ python paper/md2tex.py
 
 # 编译论文，PDF 和中间文件输出到 /tmp/top-k-paper/pdf/
 latexmk -cd -xelatex -outdir=/tmp/top-k-paper/pdf -interaction=nonstopmode -halt-on-error paper/main.tex
+```
+
+## 引用
+
+```bibtex
+@misc{zhong2026topk,
+  author = {Muhan Zhong},
+  title = {Bitwise-Correct and Faster Top-k on {TPU} v4},
+  year = {2026},
+  publisher = {Zenodo},
+  doi = {10.5281/zenodo.23287738},
+  url = {https://doi.org/10.5281/zenodo.23287738},
+}
 ```
