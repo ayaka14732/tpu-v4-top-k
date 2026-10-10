@@ -59,9 +59,7 @@ PREAMBLE = r'''\documentclass[sigconf,nonacm,balance=false]{acmart}
 
 \usepackage{listings}
 \usepackage{makecell}
-\usepackage{float}
-\usepackage{needspace}
-\lstset{basicstyle=\ttfamily\scriptsize, columns=fullflexible, keepspaces=true, breaklines=true, breakatwhitespace=false, showstringspaces=false, upquote=true, frame=none, aboveskip=4pt, belowskip=4pt}
+\lstset{basicstyle=\ttfamily, columns=fullflexible, keepspaces=true, breaklines=true, breakatwhitespace=false, showstringspaces=false, upquote=true, frame=none, aboveskip=4pt, belowskip=4pt}
 \newcommand{\code}[1]{\texttt{#1}}
 \setlength{\emergencystretch}{3em}
 
@@ -76,7 +74,7 @@ REPOSITORY = 'https://github.com/ayaka14732/tpu-v4-top-k'
 # 首页的脚注，排在致谢之前。
 NOTES = (
     f'Code, raw results, and the Chinese version of this paper: \\url{{{REPOSITORY}}}.',
-    'The code, experiments, and text of this paper were produced with Claude Code (Opus 5.5) and Codex (GPT-5.6 Sol, GPT-6 Astra), prompted by Muhan Zhong.',
+    'The code, experiments, and text of this paper were produced with Claude Code (Opus 5.5) and Codex (GPT-6 Astra, GPT-5.6 Sol), prompted by Muhan Zhong.',
 )
 # report.en.md 中只适用于仓库内阅读的句子，在论文里换掉。
 PAPER_TEXT = {
@@ -194,10 +192,10 @@ def wrap(words: list[str], width: int) -> list[str]:
             lines.append(word)
     return lines
 
-def table(rows: list[str], caption: str | None, *, in_place: bool = False) -> str:
+def table(rows: list[str], caption: str | None) -> str:
     """Markdown 表格转成 booktabs 表格。
 
-    宽度按字符数估计。先不拆表头，单栏放得下就用 table；否则把比内容宽得多的表头拆成两行再试；仍放不下就用通栏的 table*，通栏也放不下时把最宽的左对齐列改成可换行的 p 列。附录 C.3 的错误分类表用换行的类别列和较小的列间距排进单栏；附录的单栏表放在正文原位，避免越过所属小节。
+    宽度按字符数估计。先不拆表头，单栏放得下就用 table；否则把比内容宽得多的表头拆成两行再试；仍放不下就用通栏的 table*，通栏也放不下时把最宽的左对齐列改成可换行的 p 列。
     """
     cells = [[cell.strip() for cell in row.strip().strip('|').split('|')] for row in rows]
     header, spec, body = cells[0], cells[1], cells[2:]
@@ -226,21 +224,31 @@ def table(rows: list[str], caption: str | None, *, in_place: bool = False) -> st
         columns[i] = f'>{{\\raggedright\\arraybackslash}}p{{{target / room:.3f}\\linewidth}}'
         heads[i] = [' '.join(heads[i])]
         total -= width[i] - target
-    error_classes = caption is not None and caption.split(': ', 1)[1] == "Official Pallas's errors by input class."
-    if error_classes:
-        wide = False
-        heads = split
-        columns = [r'>{\raggedright\arraybackslash}p{0.28\columnwidth}', *align[1:]]
+    # 这三张数值表优先使用通栏宽度，只拆最长的表头。
+    if header[-1] in ('Bit-pattern sequence differs from reference', 'vs. `transposed`', '+ in-pipeline reorder'):
+        breaks = {
+            'Bit-pattern sequence differs from reference': ['Bit-pattern sequence', 'differs from reference'],
+            'Transpose + loser tree': ['Transpose +', 'loser tree'],
+            'vs. official Pallas': ['vs. official', 'Pallas'],
+            'Placeholder + rewrite': ['Placeholder', '+ rewrite'],
+            '+ in-pipeline reorder': ['+ in-pipeline', 'reorder'],
+        }
+        heads = [breaks.get(cell, [cell]) for cell in header]
+    if header[-1] == 'Reordered vs. dispatcher':
+        heads[-1] = ['Reordered vs.', 'dispatcher']
+    # 汇总表的前三列都允许换行，避免案例列挤压方法与部署方式。
+    if header[:3] == ['Case', 'Fastest method', 'Deployment form']:
+        columns[:3] = [f'>{{\\raggedright\\arraybackslash}}p{{{ratio:.2f}\\linewidth}}' for ratio in (0.20, 0.21, 0.18)]
+    # 延迟表让指令片段换行，为结论栏留出更多宽度。
+    if header == ['Fragment under test', 'Reading', 'Conclusion']:
+        columns[0] = r'>{\raggedright\arraybackslash}p{0.42\linewidth}'
+        columns[2] = r'>{\raggedright\arraybackslash}p{0.43\linewidth}'
     environment = 'table*' if wide else 'table'
     head = ['\\centering']
-    if error_classes:
-        head.append(r'\setlength{\tabcolsep}{2.5pt}')
     if caption is not None:
         head += [f'\\caption{{{inline(caption.split(": ", 1)[1])}}}', f'\\label{{tab:{re.match(r"Table (\d+):", caption)[1]}}}']
-    head.append('\\footnotesize' if wide or error_classes else '\\small')
     title = lambda i: inline(heads[i][0]) if len(heads[i]) == 1 else f'\\makecell[{align[i]}b]{{{"\\\\".join(inline(line) for line in heads[i])}}}'
-    placement = '[H]' if in_place and not wide else ''
-    lines = [f'\\begin{{{environment}}}{placement}', *head, f'\\begin{{tabular}}{{{"".join(columns)}}}', '\\toprule']
+    lines = [f'\\begin{{{environment}}}', *head, f'\\begin{{tabular}}{{{"".join(columns)}}}', '\\toprule']
     lines.append(' & '.join(title(i) for i in range(len(header))) + ' \\\\')
     lines.append('\\midrule')
     lines += [' & '.join(inline(cell) for cell in row) + ' \\\\' for row in body]
@@ -274,11 +282,11 @@ def convert(markdown: str) -> str:
     for old, new in PAPER_TEXT.items():
         assert markdown.count(old) == 1, old
         markdown = markdown.replace(old, new)
-    # 致谢不单独成节，与 NOTES 一起作为首页的脚注。
+    # 致谢与 NOTES 通过模板的 thanks 放在首页左栏脚注，三段之间留小段距；末尾句号由 thanks 补上。
     head, _, rest = markdown.partition('\n## Acknowledgments\n\n')
     acknowledgment, _, rest = rest.partition('\n\n')
     markdown = head + '\n' + rest
-    notes = '\n'.join(f'\\footnotetext{{{note}}}%' for note in (*NOTES, inline(acknowledgment)))
+    notes = '\n\\par\\smallskip\n'.join((*NOTES, inline(acknowledgment)))
     lines = markdown.split('\n')
     out = [PREAMBLE]
     abstract: list[str] = []
@@ -306,8 +314,7 @@ def convert(markdown: str) -> str:
             if section == 'abstract':
                 out.append('\\begin{abstract}\n' + '\n\n'.join(abstract) + '\n\\end{abstract}\n')
                 out.append(f'\\keywords{{{heading(keywords)}}}\n')
-                out.append('\\maketitle\n')
-                out.append('{\\renewcommand{\\thefootnote}{}%\n' + notes + '\n}\n')
+                out.append('\\thanks{' + notes.removesuffix('.') + '}\n\\maketitle\n')
             if title == 'Abstract':
                 section = 'abstract'
             elif title == 'References':
@@ -328,11 +335,12 @@ def convert(markdown: str) -> str:
         if section == 'references':
             i += 1
             continue
+        if line.startswith('> '):
+            out.append('\\begin{quote}\n' + inline(line[2:]) + '\n\\end{quote}\n')
+            i += 1
+            continue
         if line.startswith('### '):
             number, name = line[4:].split(' ', 1)
-            # 以表格为主体的附录小节预留半栏，避免标题留在上一栏末尾。
-            if section == 'appendix' and number in ('C.3', 'C.5'):
-                out.append(r'\Needspace{0.5\textheight}')
             out.append(f'\\subsection{{{heading(name)}}}\n\\label{{sec:{number}}}\n')
             i += 1
             continue
@@ -348,7 +356,7 @@ def convert(markdown: str) -> str:
             while end < len(lines) and lines[end].startswith('|'):
                 end += 1
             caption = lines[end + 1] if end + 1 < len(lines) and lines[end + 1].startswith('Table ') else None
-            out.append(table(lines[i:end], caption, in_place=section == 'appendix') + '\n')
+            out.append(table(lines[i:end], caption) + '\n')
             i = end + (2 if caption else 0)
             continue
         if line.startswith('!['):

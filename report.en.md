@@ -20,13 +20,7 @@ Exact top-$k$ on GPUs has been studied systematically [10–14, 33]; prior work 
 
 The official Pallas implementation begins with this comment [1]:
 
-```python
-# Note: This iterative argmax implementation assumes the input has at least k
-# values distinct from -inf. If the input contains fewer than k values
-# distinct from -inf, all remaining elements will be tied at -inf after
-# masking, which may cause repeated indices in the output. We keep this
-# behavior to avoid adding expensive defensive masking logic.
-```
+> Note: This iterative argmax implementation assumes the input has at least $k$ values distinct from `-inf`. If the input contains fewer than $k$ values distinct from `-inf`, all remaining elements will be tied at `-inf` after masking, which may cause repeated indices in the output. We keep this behavior to avoid adding expensive defensive masking logic.
 
 In other words, the implementation returns duplicate indices on a class of inputs, the authors know it, and they keep the behavior for performance. Such inputs are not rare: `-inf` is the standard way to mask logits, and the problem appears whenever a row has fewer than $k$ valid candidates. Native XLA does not have this problem.
 
@@ -901,7 +895,7 @@ This report tested a premise of JAX's official Pallas top-$k$: that correctness 
 
 ## Acknowledgments
 
-Research supported with Cloud TPUs from Google's TPU Research Cloud (TRC).
+This research received Cloud TPU support from Google's TPU Research Cloud (TRC).
 
 ## References
 

@@ -20,13 +20,7 @@ GPU 上的精确 top-$k$ 已有系统的研究 [10–14, 33]；TPU 上的已有�
 
 官方 Pallas 的实现开头有这样一段注释 [1]：
 
-```python
-# Note: This iterative argmax implementation assumes the input has at least k
-# values distinct from -inf. If the input contains fewer than k values
-# distinct from -inf, all remaining elements will be tied at -inf after
-# masking, which may cause repeated indices in the output. We keep this
-# behavior to avoid adding expensive defensive masking logic.
-```
+> Note: This iterative argmax implementation assumes the input has at least $k$ values distinct from `-inf`. If the input contains fewer than $k$ values distinct from `-inf`, all remaining elements will be tied at `-inf` after masking, which may cause repeated indices in the output. We keep this behavior to avoid adding expensive defensive masking logic.
 
 也就是说，这个实现在一类输入上会返回重复的下标，作者知道这一点，并且为了性能有意保留。这类输入并不罕见：`-inf` 是掩码 logits 的标准写法，一行里有效候选不足 $k$ 个时就会触发。原生 XLA 没有这个问题。
 
