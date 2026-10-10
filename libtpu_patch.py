@@ -99,7 +99,7 @@ def teach_iar(load_gap: int = 7, store_gap: int = 3, any_store_gap: int = 0, bar
 
     libtpu 的每个 opcode 有一条 28 字节的属性记录（internal::opcode_info_big，在 0x1ebbb8a0），第 8 到 19 字节是它读的体系结构寄存器，
     第 20 到 27 字节是它写的，0xff 结尾。置换寄存器、分段模式、随机数种子都登记在这里，排程器据此保证“先写后读”并向延迟表询问间隔；
-    IAR 没有登记，因为 XLA 只在程序开头装一次 IAR。这里补上登记，再在延迟表里给出 vsetiar 到按索引读写的间隔。
+    IAR 没有登记；编译器原本只在程序开头生成 vsetiar。这里补上登记，再在延迟表里给出 vsetiar 到按索引读写的间隔。
 
     硬件还有一条延迟表里没有的规则：任何一次写内存之后的几个周期内，vld.iar 都要等（它的地址到执行时才知道）。
     any_store_gap 不为零时，把每种向量写登记为写一个假想的寄存器、vld.iar 登记为读它，用同样的机制表达这条规则。

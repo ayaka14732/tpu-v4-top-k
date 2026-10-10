@@ -69,6 +69,7 @@ AUTHORS = r'''\author{Muhan Zhong}
 \affiliation{%
   \institution{Independent Researcher}
   \country{}}
+\email{ayaka14732@gmail.com}
 '''
 REPOSITORY = 'https://github.com/ayaka14732/tpu-v4-top-k'
 # 首页的脚注，排在致谢之前。

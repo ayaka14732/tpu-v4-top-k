@@ -233,7 +233,7 @@ def main() -> None:
     values['all:geo-official'] = geomean_speedup([(best[name][1], value) for name, value in fastest.items()])
     values['all:geo-xla'] = geomean_speedup([(best[name][0], value) for name, value in fastest.items()])
     assert behind == ['basic1'], behind
-    values['all:remaining'] = f'唯一的例外是 `[8,128]` 取前 1 名：只有一轮，没有可以分摊、也没有可以换路的地方，逐位正确多出的 {number(best["basic1"][2] - best["basic1"][1])} 个周期（官方 {number(best["basic1"][1])}，本文 {number(best["basic1"][2])}）还在。表 <<T:ks>> 中 $k$ 为 2 和 4 的情形是同一回事：链太短，转置和折叠两头的固定开销都比它长，逐位正确的代价无处可藏。'
+    values['all:remaining'] = f'唯一的例外是 `[8,128]` 取前 1 名：只有一轮，没有可以分摊、也没有可以换路的地方，逐位正确多出的 {number(best["basic1"][2] - best["basic1"][1])} 个周期（官方 {number(best["basic1"][1])}，本文 {number(best["basic1"][2])}）还在。表 <<T:ks>> 中 $k$ 为 2 和 4 的情形是同一回事：链太短，转置和折叠两头的固定开销都比它长，逐位正确的开销无处可藏。'
     # 全景：每种情形下本文最快的办法。
     def spans(labels: list[str], which: int) -> str:
         found = [fastest[label] / best[label][which] - 1 for label in labels]
