@@ -844,32 +844,7 @@ TPU-KNN [17] 的两阶段近似算法在 Pallas 中也有实现。kernel 中调�
 
 Python 3.14.7t，JAX `0.12.0.dev20261002+7fc69a22c2`，jaxlib `0.12.0.dev20261002`，libtpu `0.0.49`，tpuasm `0.2.1`；机器整体拓扑为 TPU v4 (2x2x2)，包含 2 个 host，每个 host 有 4 颗芯片；本文的实验只使用 host 0 本地的一颗芯片。`chip.py` 让这颗芯片的两个 TC 各作为一个设备出现，实验只用其中一个；环境变量 `TOP_K_CHIP` 选择本地芯片，不同芯片上的进程可以同时运行。
 
-在本目录中运行：
-
-```sh
-python compare.py check --output /tmp/top-k-paper/check          # 表 <<T:correct>>、表 <<T:officialerr>>
-python compare.py fix --output /tmp/top-k-paper/fix              # 表 <<T:fixes>>，附录 C.4
-python compare.py rows --output /tmp/top-k-paper/rows            # 表 <<T:chains>>
-python compare.py ks --output /tmp/top-k-paper/ks                # 表 <<T:ks>>
-python compare.py time --output /tmp/top-k-paper/time            # 表 <<T:wide>>、表 <<T:vertical>>、表 <<T:basic>>、表 <<T:rows>>
-python folded_select.py shell /tmp/top-k-paper/handwritten.json  # 表 <<T:hand>>
-python folded_interval.py placeholder --rows 8                   # 表 <<T:folded8>>，每种编译方式一个进程
-python folded_interval.py rescheduled --rows 8
-python folded_interval.py compiler                               # 表 <<T:folded8>>、表 <<T:foldedrows>>
-python folded_interval.py reorder
-python transpose_merge.py 8 9 10 ... 128 --output /tmp/top-k-paper/transpose   # 表 <<T:transpose>>、表 <<T:sweep>>，可以分给几颗芯片
-python transpose_merge.py --k 16 8 16 ... 128 --output /tmp/top-k-paper/transpose16   # 表 <<T:loser16>>
-python approx.py check --output /tmp/top-k-paper/approx          # 表 <<T:approxcheck>>
-python approx.py time --output /tmp/top-k-paper/approx           # 表 <<T:approxtime>>
-python merge_profile.py 16 128                                   # 6.3、6.5 节的指令条数
-python memory_capacity.py                                        # 表 <<T:memory>>
-python semantics.py                                              # 表 <<T:inst>>
-python latency.py                                                # 表 <<T:lat>>
-python clock_rate.py                                             # 3.3 节的时钟频率
-python latency_probe.py compare.py time --cases basic32 --output /tmp/top-k-paper/probe   # 编译器自己的延迟表
-python tables.py                                                 # 由 results/ 中的记录生成正文各表
-python figures.py                                                # 由 results/ 中的记录生成 figures/ 中的各图
-```
+完整复现命令、它们与正文各表的对应关系，以及报告和论文的生成方法，见仓库 README：<https://github.com/ayaka14732/tpu-v4-top-k/blob/main/README.md>。
 
 各次运行的原始记录保存在 `results/`，包含每个计时程序的端点布局、区间内的指令和 DMA。各文件的作用：
 

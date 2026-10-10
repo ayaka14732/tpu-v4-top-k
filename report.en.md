@@ -948,32 +948,7 @@ Research supported with Cloud TPUs from Google's TPU Research Cloud (TRC).
 
 Python 3.14.7t, JAX `0.12.0.dev20261002+7fc69a22c2`, jaxlib `0.12.0.dev20261002`, libtpu `0.0.49`, tpuasm `0.2.1`. The whole machine has the topology TPU v4 (2x2x2), with 2 hosts of 4 chips each; our experiments use only one chip local to host 0. `chip.py` exposes the two TCs of this chip as two devices, and the experiments use only one of them; the environment variable `TOP_K_CHIP` selects the local chip, and processes on different chips can run at the same time.
 
-The Chinese version `report.md` is generated from `report.template.md` and `results/` by `tables.py`; this English version is a translation of it. Run in this directory:
-
-```sh
-python compare.py check --output /tmp/top-k-paper/check          # Tables 4 and 22
-python compare.py fix --output /tmp/top-k-paper/fix              # Table 5, Appendix C.4
-python compare.py rows --output /tmp/top-k-paper/rows            # Table 9
-python compare.py ks --output /tmp/top-k-paper/ks                # Table 10
-python compare.py time --output /tmp/top-k-paper/time            # Tables 6, 7, 8, and 11
-python folded_select.py shell /tmp/top-k-paper/handwritten.json  # Table 12
-python folded_interval.py placeholder --rows 8                   # Table 16, one process per compilation configuration
-python folded_interval.py rescheduled --rows 8
-python folded_interval.py compiler                               # Tables 16 and 17
-python folded_interval.py reorder
-python transpose_merge.py 8 9 10 ... 128 --output /tmp/top-k-paper/transpose   # Tables 13 and 23, can be split across chips
-python transpose_merge.py --k 16 8 16 ... 128 --output /tmp/top-k-paper/transpose16   # Table 24
-python approx.py check --output /tmp/top-k-paper/approx          # Table 20
-python approx.py time --output /tmp/top-k-paper/approx           # Table 21
-python merge_profile.py 16 128                                   # instruction counts in Sections 6.3 and 6.5
-python memory_capacity.py                                        # Table 1
-python semantics.py                                              # Table 2
-python latency.py                                                # Table 3
-python clock_rate.py                                             # clock rate in Section 3.3
-python latency_probe.py compare.py time --cases basic32 --output /tmp/top-k-paper/probe   # the compiler's own latency table
-python tables.py                                                 # generate the tables in report.md from results/
-python figures.py                                                # generate the figures in figures/ from results/
-```
+The Chinese version `report.md` is generated from `report.template.md` and `results/` by `tables.py`; this English version is a translation of it. Detailed reproduction commands, their correspondence to the tables, and instructions for generating the reports and paper are maintained in the repository README: <https://github.com/ayaka14732/tpu-v4-top-k/blob/main/README.md>.
 
 The raw records of each run are saved in `results/`, including the endpoint layouts, the instructions in the interval, and the DMAs of every timed program. The files are:
 

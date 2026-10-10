@@ -79,7 +79,7 @@ NOTES = (
 # report.en.md 中只适用于仓库内阅读的句子，在论文里换掉。
 PAPER_TEXT = {
     'All code for this report is in this directory and depends only on': f'All code for this paper is available at <{REPOSITORY}> and depends only on',
-    'The Chinese version `report.md` is generated from `report.template.md` and `results/` by `tables.py`; this English version is a translation of it. Run in this directory:': 'The repository also contains a Chinese version of this paper, `report.md`, which `tables.py` generates from `report.template.md` and `results/`; this paper is a translation of it. Run in the root of the repository:',
+    'The Chinese version `report.md` is generated from `report.template.md` and `results/` by `tables.py`; this English version is a translation of it.': 'The repository also contains a Chinese version of this paper, `report.md`, which `tables.py` generates from `report.template.md` and `results/`; this paper is a translation of it.',
 }
 TEXT = {
     '\u2212': '$-$',
