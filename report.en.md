@@ -16,7 +16,7 @@ There are two ready-made ways to compute top-$k$ with JAX on TPU. One is to call
 
 Exact top-$k$ on GPUs has been studied systematically [10–14, 33]; prior work on TPU consists of approximate algorithms [17, 18] that trade recall for parallelism. The TPU instruction set is not public, and published material stops at the architecture level [26–28]. To our knowledge, no prior work analyzes exact top-$k$ on TPU at the instruction level (Chapter 10).
 
-### 1.2 A Comment That Admits an Error
+### 1.2 Origin of the Problem
 
 The official Pallas implementation begins with this comment [1]:
 
@@ -246,7 +246,7 @@ This chapter answers RQ1. Sections 4.1 to 4.3 describe the three kinds of errors
 
 ### 4.1 Selected Positions Are Selected Again
 
-Official Pallas uses the value `-inf` as the "selected" marker. When the input itself contains `-inf`, the two cannot be told apart. Take `f32[8,128]` in which each row has finite values 3, 2, and 1 only in lanes 0, 1, and 127 and `-inf` everywhere else, with $k = 8$. The first three rounds are fine. In round 4 the whole row is `-inf`, all tied, and argmax returns lane 127; "changing" it to `-inf` changes nothing, and every later round selects 127 again:
+Official Pallas uses the value `-inf` as the "selected" marker. When the input itself contains `-inf`, the two cannot be told apart. Take `f32[8,128]` in which each row has finite values 3, 2, and 1 only in lanes 0, 127, and 1 and `-inf` everywhere else, with $k = 8$. The first three rounds are fine. In round 4 the whole row is `-inf`, all tied, and argmax returns lane 127; "changing" it to `-inf` changes nothing, and every later round selects 127 again:
 
 ```text
 values:  [  3.   2.   1. -inf -inf -inf -inf -inf]
@@ -837,7 +837,7 @@ The results of each layer of checks in Section 3.6 are as follows.
 - Every timed program, including native XLA, was checked element by element on all values and indices of the 8 inputs, with and without the readings inserted.
 - Handwritten fold-and-rank (Section 6.2) was additionally checked in the timing harness with inputs containing special values (random raw bit patterns, small-integer ties, constant bit patterns, 0 to $k + 1$ non-negative keys, three finite values with `-inf` elsewhere, mixtures of special bit patterns).
 - Fold-and-rank from placeholder rewriting and from the compilation pipeline (Chapter 7) was checked for every shape and every compilation configuration in the timing harness with the same classes of inputs, for value bit patterns and stable indices, with no errors.
-- Full transpose with a loser tree (Sections 6.3 to 6.5): every number of rows from 8 to 128 was additionally checked in the timing harness with 80 inputs, 658240 rows in all. 64 of them follow the classes of Table 4, and 16 are targeted: making all of the top 8 come from the same candidate column (advancing to the last level of the candidate table), or switching candidate columns every round (taking a different winner path every round). The 16 numbers of rows for $k = 16$ were checked the same way, 95744 rows in all.
+- Full transpose with a loser tree (Sections 6.3 to 6.5): every number of rows from 8 to 128 was additionally checked in the timing harness with 80 inputs, 658240 rows in all. 64 of them follow the classes of Table 4; the other 16 are targeted: making all of the top 8 come from the same candidate column (advancing to the last level of the candidate table), or switching candidate columns every round (taking a different winner path every round). The 16 numbers of rows for $k = 16$ were checked the same way, 95744 rows in all.
 - The four instructions of Table 2 were each compared element by element with their models on 4 random inputs.
 
 Two methodological lessons are worth recording. First, checking a fragment does not replace checking the complete program: a handwritten fragment was fully correct in the test carrier but wrong in the complete program, because the carrier happened to leave a zero in some register, masking a missing dependence. Second, correctness on small shapes does not show that the rules are followed: several bugs in the rewriter appeared only when registers were tight and the compiler started reusing and spilling them.
@@ -923,7 +923,7 @@ This research received Cloud TPU support from Google's TPU Research Cloud (TRC).
 22. A. B. Hayes, F. Hua, J. Huang, Y. Chen, E. Z. Zhang, Decoding CUDA Binary, CGO, 2019, 229–241, <https://doi.org/10.1109/CGO.2019.8661186>.
 23. A. Abel, J. Reineke, uops.info: Characterizing Latency, Throughput, and Port Usage of Instructions on Intel Microarchitectures, ASPLOS, 2019, <https://doi.org/10.1145/3297858.3304062>.
 24. G. He, E. Yoneki, SIP: Autotuning GPU Native Schedules via Stochastic Instruction Perturbation, EuroMLSys, 2024, <https://arxiv.org/abs/2403.16863>.
-25. G. He, E. Yoneki, CuAsmRL: Optimizing GPU SASS Schedules via Deep Reinforcement Learning, CGO, 2025, <https://arxiv.org/abs/2501.08071>.
+25. G. He, E. Yoneki, CuAsmRL: Optimizing GPU SASS Schedules via Deep Reinforcement Learning, CGO, 2025, <https://doi.org/10.1145/3696443.3708943>.
 26. T. Norrie et al., The Design Process for Google's Training Chips: TPUv2 and TPUv3, IEEE Micro 41(2), 2021, <https://doi.org/10.1109/MM.2021.3058217>.
 27. N. P. Jouppi et al., TPU v4: An Optically Reconfigurable Supercomputer for Machine Learning with Hardware Support for Embeddings, ISCA, 2023, <https://doi.org/10.1145/3579371.3589350>.
 28. N. P. Jouppi, S. Lakshmanamurthy, C. Young, D. Patterson, Google's Training Supercomputers from TPU v2 to Ironwood: Architectural Stability, Scale, Resilience, Power Efficiency, and Sustainability Across Five Generations, arXiv:2606.15870, 2026, <https://arxiv.org/abs/2606.15870>.

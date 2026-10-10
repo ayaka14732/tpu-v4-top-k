@@ -41,7 +41,7 @@ There are two ready-made ways to compute top-$k$ with JAX on TPU. One is to call
 
 Exact top-$k$ on GPUs has been studied systematically~\cite{shanbhag2018,johnson2021faiss,gaihre2021drtopk,li2024radik,xie2025rtopk,zhang2023air}; prior work on TPU consists of approximate algorithms~\cite{chern2022tpuknn,samaga2026} that trade recall for parallelism. The TPU instruction set is not public, and published material stops at the architecture level~\cite{norrie2021tpuv2,jouppi2023tpuv4,jouppi2026ironwood}. To our knowledge, no prior work analyzes exact top-$k$ on TPU at the instruction level (Section~\ref{sec:10}).
 
-\subsection{A Comment That Admits an Error}
+\subsection{Origin of the Problem}
 \label{sec:1.2}
 
 The official Pallas implementation begins with this comment~\cite{jax-topk-impl}:
@@ -323,7 +323,7 @@ This chapter answers RQ1. Sections~\ref{sec:4.1} to \ref{sec:4.3} describe the t
 \subsection{Selected Positions Are Selected Again}
 \label{sec:4.1}
 
-Official Pallas uses the value \code{-inf} as the ``selected'' marker. When the input itself contains \code{-inf}, the two cannot be told apart. Take \code{f32[8,\allowbreak{}128]} in which each row has finite values 3, 2, and 1 only in lanes 0, 1, and 127 and \code{-inf} everywhere else, with $k = 8$. The first three rounds are fine. In round 4 the whole row is \code{-inf}, all tied, and argmax returns lane 127; ``changing'' it to \code{-inf} changes nothing, and every later round selects 127 again:
+Official Pallas uses the value \code{-inf} as the ``selected'' marker. When the input itself contains \code{-inf}, the two cannot be told apart. Take \code{f32[8,\allowbreak{}128]} in which each row has finite values 3, 2, and 1 only in lanes 0, 127, and 1 and \code{-inf} everywhere else, with $k = 8$. The first three rounds are fine. In round 4 the whole row is \code{-inf}, all tied, and argmax returns lane 127; ``changing'' it to \code{-inf} changes nothing, and every later round selects 127 again:
 
 \begin{lstlisting}
 values:  [  3.   2.   1. -inf -inf -inf -inf -inf]
@@ -1104,7 +1104,7 @@ The results of each layer of checks in Section~\ref{sec:3.6} are as follows.
 \item Every timed program, including native XLA, was checked element by element on all values and indices of the 8 inputs, with and without the readings inserted.
 \item Handwritten fold-and-rank (Section~\ref{sec:6.2}) was additionally checked in the timing harness with inputs containing special values (random raw bit patterns, small-integer ties, constant bit patterns, 0 to $k + 1$ non-negative keys, three finite values with \code{-inf} elsewhere, mixtures of special bit patterns).
 \item Fold-and-rank from placeholder rewriting and from the compilation pipeline (Section~\ref{sec:7}) was checked for every shape and every compilation configuration in the timing harness with the same classes of inputs, for value bit patterns and stable indices, with no errors.
-\item Full transpose with a loser tree (Sections~\ref{sec:6.3} to \ref{sec:6.5}): every number of rows from 8 to 128 was additionally checked in the timing harness with 80 inputs, 658240 rows in all. 64 of them follow the classes of Table~\ref{tab:4}, and \ref{tab:16} are targeted: making all of the top 8 come from the same candidate column (advancing to the last level of the candidate table), or switching candidate columns every round (taking a different winner path every round). The 16 numbers of rows for $k = 16$ were checked the same way, 95744 rows in all.
+\item Full transpose with a loser tree (Sections~\ref{sec:6.3} to \ref{sec:6.5}): every number of rows from 8 to 128 was additionally checked in the timing harness with 80 inputs, 658240 rows in all. 64 of them follow the classes of Table~\ref{tab:4}; the other 16 are targeted: making all of the top 8 come from the same candidate column (advancing to the last level of the candidate table), or switching candidate columns every round (taking a different winner path every round). The 16 numbers of rows for $k = 16$ were checked the same way, 95744 rows in all.
 \item The four instructions of Table~\ref{tab:2} were each compared element by element with their models on 4 random inputs.
 \end{itemize}
 

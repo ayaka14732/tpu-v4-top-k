@@ -16,7 +16,7 @@ top-$k$ 是神经网络中的常见算子：MoE 的路由为每个 token 选出�
 
 GPU 上的精确 top-$k$ 已有系统的研究 [10–14, 33]；TPU 上的已有工作则都是近似算法 [17, 18]，以召回率换取并行度。TPU 的指令集没有公开，已发表的资料只到体系结构层面 [26–28]。据我们所知，此前没有在指令层面分析 TPU 上精确 top-$k$ 的工作（第 10 章）。
 
-### 1.2 一段承认错误的注释
+### 1.2 问题的由来
 
 官方 Pallas 的实现开头有这样一段注释 [1]：
 
@@ -246,7 +246,7 @@ def program(x):
 
 ### 4.1 已选的位置被重新选中
 
-官方 Pallas 用 `-inf` 这个值充当“已选”的标记。输入里本来就有 `-inf` 时，两者无法区分。取 `f32[8,128]`，每行只有通道 0、1、127 是有限值 3、2、1，其余都是 `-inf`，$k = 8$。前三轮正常。第 4 轮整行都是 `-inf`，全部并列，argmax 返回通道 127；把它“改成” `-inf` 之后什么都没变，之后每一轮再次选中 127：
+官方 Pallas 用 `-inf` 这个值充当“已选”的标记。输入里本来就有 `-inf` 时，两者无法区分。取 `f32[8,128]`，每行只有通道 0、127、1 是有限值 3、2、1，其余都是 `-inf`，$k = 8$。前三轮正常。第 4 轮整行都是 `-inf`，全部并列，argmax 返回通道 127；把它“改成” `-inf` 之后什么都没变，之后每一轮再次选中 127：
 
 ```text
 values:  [  3.   2.   1. -inf -inf -inf -inf -inf]
@@ -819,7 +819,7 @@ TPU-KNN [17] 的两阶段近似算法在 Pallas 中也有实现。kernel 中调�
 22. A. B. Hayes、F. Hua、J. Huang、Y. Chen、E. Z. Zhang，Decoding CUDA Binary，CGO，2019，229–241，<https://doi.org/10.1109/CGO.2019.8661186>。
 23. A. Abel、J. Reineke，uops.info: Characterizing Latency, Throughput, and Port Usage of Instructions on Intel Microarchitectures，ASPLOS，2019，<https://doi.org/10.1145/3297858.3304062>。
 24. G. He、E. Yoneki，SIP: Autotuning GPU Native Schedules via Stochastic Instruction Perturbation，EuroMLSys，2024，<https://arxiv.org/abs/2403.16863>。
-25. G. He、E. Yoneki，CuAsmRL: Optimizing GPU SASS Schedules via Deep Reinforcement Learning，CGO，2025，<https://arxiv.org/abs/2501.08071>。
+25. G. He、E. Yoneki，CuAsmRL: Optimizing GPU SASS Schedules via Deep Reinforcement Learning，CGO，2025，<https://doi.org/10.1145/3696443.3708943>。
 26. T. Norrie 等，The Design Process for Google's Training Chips: TPUv2 and TPUv3，IEEE Micro 41(2)，2021，<https://doi.org/10.1109/MM.2021.3058217>。
 27. N. P. Jouppi 等，TPU v4: An Optically Reconfigurable Supercomputer for Machine Learning with Hardware Support for Embeddings，ISCA，2023，<https://doi.org/10.1145/3579371.3589350>。
 28. N. P. Jouppi、S. Lakshmanamurthy、C. Young、D. Patterson，Google's Training Supercomputers from TPU v2 to Ironwood: Architectural Stability, Scale, Resilience, Power Efficiency, and Sustainability Across Five Generations，arXiv:2606.15870，2026，<https://arxiv.org/abs/2606.15870>。
