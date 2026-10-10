@@ -4,12 +4,12 @@
 <text x="20.0" y="28.0" font-size="14" text-anchor="start" fill="#0b0b0b" font-weight="bold">1 Full transpose</text>
 <rect x="20.0" y="50.0" width="120.0" height="40.0" rx="0" fill="#ffffff" stroke="#52514e"/>
 <rect x="20.0" y="62.0" width="120.0" height="8.0" rx="0" fill="#2a78d6" stroke="none"/>
-<text x="20.0" y="108.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">[R,128]: row r</text>
+<text x="20.0" y="108.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">[<tspan font-family="Liberation Serif, serif" font-style="italic">R</tspan>,128]: row <tspan font-family="Liberation Serif, serif" font-style="italic">r</tspan></text>
 <line x1="150.0" y1="70.0" x2="180.0" y2="70.0" stroke="#52514e" stroke-width="1" marker-end="url(#arrow)"/>
 <rect x="190.0" y="40.0" width="40.0" height="120.0" rx="0" fill="#ffffff" stroke="#52514e"/>
 <rect x="202.0" y="40.0" width="8.0" height="120.0" rx="0" fill="#2a78d6" stroke="none"/>
-<text x="190.0" y="178.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">[128,R]:</text>
-<text x="190.0" y="196.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">lane r</text>
+<text x="190.0" y="178.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">[128,<tspan font-family="Liberation Serif, serif" font-style="italic">R</tspan>]:</text>
+<text x="190.0" y="196.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">lane <tspan font-family="Liberation Serif, serif" font-style="italic">r</tspan></text>
 <text x="320.0" y="28.0" font-size="14" text-anchor="start" fill="#0b0b0b" font-weight="bold">2 Candidate columns per sublane</text>
 <rect x="320.0" y="50.0" width="20.0" height="12.0" rx="0" fill="#104281" stroke="#ffffff"/>
 <rect x="320.0" y="64.0" width="20.0" height="12.0" rx="0" fill="#1c5cab" stroke="#ffffff"/>

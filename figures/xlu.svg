@@ -130,7 +130,7 @@
 <rect x="137.0" y="123.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="146.0" y="123.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="155.0" y="123.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
-<text x="20.0" y="52.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">TC VREG a</text>
+<text x="20.0" y="52.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">TC VREG <tspan font-family="Liberation Serif, serif" font-style="italic">a</tspan></text>
 <rect x="20.0" y="160.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="29.0" y="160.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="38.0" y="160.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
@@ -259,7 +259,7 @@
 <rect x="137.0" y="223.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="146.0" y="223.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="155.0" y="223.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
-<text x="20.0" y="152.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">TC VREG b</text>
+<text x="20.0" y="152.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">TC VREG <tspan font-family="Liberation Serif, serif" font-style="italic">b</tspan></text>
 <rect x="220.0" y="110.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="229.0" y="110.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="238.0" y="110.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>

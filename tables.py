@@ -68,7 +68,7 @@ def main() -> None:
         shape = found['xla']['shape']
         return [f'`[{shape[0]},{shape[1]}]`', str(found['xla']['k']), number(fastest) + mark, number(official), number(ours), change(ours, fastest), change(ours, official)]
 
-    header = ['形状', 'k', '原生 XLA', '官方 Pallas', '本文', '本文相对原生 XLA', '本文相对官方 Pallas']
+    header = ['形状', '$k$', '原生 XLA', '官方 Pallas', '本文', '本文相对原生 XLA', '本文相对官方 Pallas']
     groups = {
         'basic': ['basic1', 'basic8', 'basic16', 'basic32', 'basic128'],
         'rows': ['rows16', 'rows32', 'rows64', 'rows96', 'rows128', 'rows256', 'rows16_16'],
@@ -89,8 +89,8 @@ def main() -> None:
     assert len(faster_xla) == 25
     values['SUMMARY:q3'] = '\n'.join((
         f'- 相对原生 XLA，本文在全部 25 个形状上更快，周期数少 {min(faster_xla) * 100:.0f}% 至 {max(faster_xla) * 100:.0f}%。',
-        f'- 相对官方 Pallas，本文在 {len(faster)} 个形状上更快，少 {min(faster) * 100:.0f}% 至 {max(faster) * 100:.0f}%；在 {len(slower)} 个形状上更慢，多 {min(slower) * 100:.0f}% 至 {max(slower) * 100:.0f}%。这 {len(slower)} 个形状是同一种情形，即行宽 128、沿最后一维、行数不超过 64 并且仍然用链的那些：`[8,128]` 的 k = 1 与 8，16、32、64 行的 k = 8。在这些形状上官方 Pallas 的链已经贴着 XLU 的延迟，本文多出来的主要是逐位正确所需的指令。',
-        f'- 官方 Pallas 自己在 {len(official_slower)} 个形状上比原生 XLA 慢，都是 k 较大的情形。',
+        f'- 相对官方 Pallas，本文在 {len(faster)} 个形状上更快，少 {min(faster) * 100:.0f}% 至 {max(faster) * 100:.0f}%；在 {len(slower)} 个形状上更慢，多 {min(slower) * 100:.0f}% 至 {max(slower) * 100:.0f}%。这 {len(slower)} 个形状是同一种情形，即行宽 128、沿最后一维、行数不超过 64 并且仍然用链的那些：`[8,128]` 的 $k = 1$ 与 8，16、32、64 行的 $k = 8$。在这些形状上官方 Pallas 的链已经贴着 XLU 的延迟，本文多出来的主要是逐位正确所需的指令。',
+        f'- 官方 Pallas 自己在 {len(official_slower)} 个形状上比原生 XLA 慢，都是 $k$ 较大的情形。',
     ))
     values['SUMMARY:officialslower'] = str(len(official_slower))
     # 原生 XLA 的周期数与输入：同一份输入重复运行的波动，与不同输入之间的差别。
@@ -112,7 +112,7 @@ def main() -> None:
     values['xi:summary'] = (
         f'区间里有 DMA 的 {len(dma)} 个形状，同一份输入重复运行也有 1 至 {max(dma)} 个周期的波动，波动与输入无关；'
         f'没有 DMA 的 {len(constant) + len(data)} 个形状里，{len(constant)} 个的读数无论换不换输入都恒定。'
-        f'剩下的一个是 {shape}：XLA 在这个形状上用的是一个专门的 top-k custom call，同一份输入重复运行恒定，不同输入之间相差 {difference} 个周期，说明它里面有按数据决定的分支。'
+        f'剩下的一个是 {shape}：XLA 在这个形状上用的是一个专门的 top-$k$ custom call，同一份输入重复运行恒定，不同输入之间相差 {difference} 个周期，说明它里面有按数据决定的分支。'
         f'其余 {len(dma) + len(constant)} 个形状的周期数都与输入无关：它们多数是排序，区间里没有按数据决定的分支。'
     )
     values['q3:faster'] = str(len(faster))
@@ -135,7 +135,7 @@ def main() -> None:
     sweep_k: dict[tuple[int, int], dict[str, float]] = {}
     for record in load('ks.json'):
         sweep_k.setdefault((record['shape'][0], record['k']), {})[record['variant']] = record['median']
-    values['TABLE:ks'] = table(['行数', 'k', '官方 Pallas', '不转置', '`transposed`', '`transposed` 相对官方 Pallas'], [[str(rows), str(k), *(number(found[name]) for name in ('official', 'chain', 'transposed')), change(found['transposed'], found['official'])] for (rows, k), found in sorted(sweep_k.items(), key=lambda item: (item[0][1], item[0][0]))], left=2)
+    values['TABLE:ks'] = table(['行数', '$k$', '官方 Pallas', '不转置', '`transposed`', '`transposed` 相对官方 Pallas'], [[str(rows), str(k), *(number(found[name]) for name in ('official', 'chain', 'transposed')), change(found['transposed'], found['official'])] for (rows, k), found in sorted(sweep_k.items(), key=lambda item: (item[0][1], item[0][0]))], left=2)
     assert all(found['transposed'] < min(found['official'], found['chain']) for (_, k), found in sweep_k.items() if k >= 16)
     assert all(found['transposed'] > found['chain'] > found['official'] for (_, k), found in sweep_k.items() if k < 8)
     small = [found['chain'] / found['official'] - 1 for (_, k), found in sweep_k.items() if k < 8]
@@ -161,10 +161,10 @@ def main() -> None:
     hand = {record['k']: record['median'] for record in load('handwritten.json')}
     assert all(record['special'] == record['median'] for record in load('handwritten.json'))
     label = {8: 'basic8', 16: 'basic16', 32: 'basic32'}
-    values['TABLE:handwritten'] = table(['k', '原生 XLA', '官方 Pallas', '本文的通用分派', '手写的折叠后数秩', '相对原生 XLA', '相对官方 Pallas', '相对通用分派'], [[str(k), *(number(v) for v in best[label[k]]), number(hand[k]), *(change(hand[k], v) for v in best[label[k]])] for k in label])
+    values['TABLE:handwritten'] = table(['$k$', '原生 XLA', '官方 Pallas', '本文的通用分派', '手写的折叠后数秩', '相对原生 XLA', '相对官方 Pallas', '相对通用分派'], [[str(k), *(number(v) for v in best[label[k]]), number(hand[k]), *(change(hand[k], v) for v in best[label[k]])] for k in label])
     values['hand:8:official'], values['hand:8:xla'] = less(hand[8], best['basic8'][1]), less(hand[8], best['basic8'][0])
     modes = (('placeholder', '占位加改写'), ('rescheduled', '再重排'), ('compiler', '编译流程生成'), ('reorder', '再加流程内重排'))
-    values['TABLE:folded8'] = table(['k', '原生 XLA', '官方 Pallas', '本文的通用分派', '手写', *(text for _, text in modes)], [[str(k), *(number(v) for v in best[label[k]]), number(hand[k]), *(number(folded[mode][8, k]) for mode, _ in modes)] for k in label])
+    values['TABLE:folded8'] = table(['$k$', '原生 XLA', '官方 Pallas', '本文的通用分派', '手写', *(text for _, text in modes)], [[str(k), *(number(v) for v in best[label[k]]), number(hand[k]), *(number(folded[mode][8, k]) for mode, _ in modes)] for k in label])
     for mode, _ in modes:
         for k in label:
             values[f'f:{mode}:{k}'] = number(folded[mode][8, k])
@@ -179,10 +179,10 @@ def main() -> None:
     ratios = [folded['reorder'][8, k] / hand[k] - 1 for k in label]
     assert max(ratios) < 0
     values['ns:basic8:official'], values['ns:basic8:folded'] = nanoseconds(best['basic8'][1]), nanoseconds(folded['reorder'][8, 8])
-    values['SUMMARY:folded8'] = f'最后一种方式下，编译器从一个六十行的 Pallas 函数生成的程序，在三个 k 上都比手写的版本快（少 {-max(ratios) * 100:.0f}% 至 {-min(ratios) * 100:.0f}%），比官方 Pallas 少 {less(folded["reorder"][8, 8], best["basic8"][1])} 至 {less(folded["reorder"][8, 32], best["basic32"][1])}，比原生 XLA 少 {less(folded["reorder"][8, 32], best["basic32"][0])} 至 {less(folded["reorder"][8, 8], best["basic8"][0])}。四种编译方式的次序也说明了差距的来源：从“占位加改写”到“再重排”、从“编译流程生成”到“再加流程内重排”，指令没有变，变的只是先后。'
+    values['SUMMARY:folded8'] = f'最后一种方式下，编译器从一个六十行的 Pallas 函数生成的程序，在三个 $k$ 上都比手写的版本快（少 {-max(ratios) * 100:.0f}% 至 {-min(ratios) * 100:.0f}%），比官方 Pallas 少 {less(folded["reorder"][8, 8], best["basic8"][1])} 至 {less(folded["reorder"][8, 32], best["basic32"][1])}，比原生 XLA 少 {less(folded["reorder"][8, 32], best["basic32"][0])} 至 {less(folded["reorder"][8, 8], best["basic8"][0])}。四种编译方式的次序也说明了差距的来源：从“占位加改写”到“再重排”、从“编译流程生成”到“再加流程内重排”，指令没有变，变的只是先后。'
     shapes = {(16, 8): 'rows16', (16, 16): 'rows16_16', (32, 8): 'rows32'}
     values['fr:16_16:official'], values['fr:16_16:ours'], values['fr:16_16:folded'] = less(folded['reorder'][16, 16], best['rows16_16'][1]), less(folded['reorder'][16, 16], best['rows16_16'][2]), number(folded['reorder'][16, 16])
-    values['TABLE:foldedrows'] = table(['形状', 'k', '原生 XLA', '官方 Pallas', '本文的通用分派', '折叠后数秩', '折叠后数秩，重排', '重排相对官方 Pallas', '重排相对通用分派'], [[f'`[{rows},128]`', str(k), *(number(v) for v in best[name]), number(folded['compiler'][rows, k]), number(folded['reorder'][rows, k]), change(folded['reorder'][rows, k], best[name][1]), change(folded['reorder'][rows, k], best[name][2])] for (rows, k), name in shapes.items()])
+    values['TABLE:foldedrows'] = table(['形状', '$k$', '原生 XLA', '官方 Pallas', '本文的通用分派', '折叠后数秩', '折叠后数秩，重排', '重排相对官方 Pallas', '重排相对通用分派'], [[f'`[{rows},128]`', str(k), *(number(v) for v in best[name]), number(folded['compiler'][rows, k]), number(folded['reorder'][rows, k]), change(folded['reorder'][rows, k], best[name][1]), change(folded['reorder'][rows, k], best[name][2])] for (rows, k), name in shapes.items()])
     # 整体转置加败者树。
     records = load('transpose.json')
     sweep = {record['rows']: (record['transpose']['median'], record['official']['median']) for record in records}
@@ -233,7 +233,7 @@ def main() -> None:
     values['all:geo-official'] = geomean_speedup([(best[name][1], value) for name, value in fastest.items()])
     values['all:geo-xla'] = geomean_speedup([(best[name][0], value) for name, value in fastest.items()])
     assert behind == ['basic1'], behind
-    values['all:remaining'] = f'唯一的例外是 `[8,128]` 取前 1 名：只有一轮，没有可以分摊、也没有可以换路的地方，逐位正确多出的 {number(best["basic1"][2] - best["basic1"][1])} 个周期（官方 {number(best["basic1"][1])}，本文 {number(best["basic1"][2])}）还在。表 <<T:ks>> 中 k 为 2 和 4 的情形是同一回事：链太短，转置和折叠两头的固定开销都比它长，逐位正确的代价无处可藏。'
+    values['all:remaining'] = f'唯一的例外是 `[8,128]` 取前 1 名：只有一轮，没有可以分摊、也没有可以换路的地方，逐位正确多出的 {number(best["basic1"][2] - best["basic1"][1])} 个周期（官方 {number(best["basic1"][1])}，本文 {number(best["basic1"][2])}）还在。表 <<T:ks>> 中 $k$ 为 2 和 4 的情形是同一回事：链太短，转置和折叠两头的固定开销都比它长，逐位正确的代价无处可藏。'
     # 全景：每种情形下本文最快的办法。
     def spans(labels: list[str], which: int) -> str:
         found = [fastest[label] / best[label][which] - 1 for label in labels]
@@ -243,12 +243,12 @@ def main() -> None:
     overview = (
         ('行宽超过 128', '通道内排出候选列（5.1 节）', 'Pallas 源码', groups['wide']),
         ('沿子通道', '整数键的秩计数、候选层、归并（5.2 节）', 'Pallas 源码', groups['vertical']),
-        ('行宽 128、8 行、k 为 128', '秩计数（5.3 节）', 'Pallas 源码', ['basic128']),
-        ('行宽 128、256 行、k = 8', '只求下标、结束后取值的链（5.4 节）', 'Pallas 源码', ['rows256']),
-        ('行宽 128、8 行、k 为 8 至 32', '折叠后数秩（6.2 节、第 7 章）', '进程内补丁（最快）；改写 executable 也快于两个基线', ['basic8', 'basic16', 'basic32']),
-        ('行宽 128、16 行、k = 16', '折叠后数秩（7.4 节）', '进程内补丁', ['rows16_16']),
-        ('行宽 128、16 至 128 行、k = 8', '整体转置加败者树（6.3 至 6.5 节）', '改写 executable', ['rows16', 'rows32', 'rows64', 'rows96', 'rows128']),
-        ('行宽 128、8 行、k = 1', '`phased`', 'Pallas 源码', ['basic1']),
+        ('行宽 128、8 行、$k$ 为 128', '秩计数（5.3 节）', 'Pallas 源码', ['basic128']),
+        ('行宽 128、256 行、$k = 8$', '只求下标、结束后取值的链（5.4 节）', 'Pallas 源码', ['rows256']),
+        ('行宽 128、8 行、$k$ 为 8 至 32', '折叠后数秩（6.2 节、第 7 章）', '进程内补丁（最快）；改写 executable 也快于两个基线', ['basic8', 'basic16', 'basic32']),
+        ('行宽 128、16 行、$k = 16$', '折叠后数秩（7.4 节）', '进程内补丁', ['rows16_16']),
+        ('行宽 128、16 至 128 行、$k = 8$', '整体转置加败者树（6.3 至 6.5 节）', '改写 executable', ['rows16', 'rows32', 'rows64', 'rows96', 'rows128']),
+        ('行宽 128、8 行、$k = 1$', '`phased`', 'Pallas 源码', ['basic1']),
     )
     assert sorted(label for *_, labels in overview for label in labels) == sorted(best)
     values['TABLE:overview'] = table(['情形', '最快的办法', '部署形式', '形状数', '相对官方 Pallas', '相对原生 XLA'], [[case, method, means, str(len(labels)), spans(labels, 1), spans(labels, 0)] for case, method, means, labels in overview], left=3)
@@ -263,7 +263,7 @@ def main() -> None:
         mark = '‡' if 'repaired' in found['xla'] else ''
         exact_ours = number(best[exact[count, width, k]][2]) if (count, width, k) in exact else '—'
         rows.append([f'`[{count},{width}]`', str(k), str(found['ours']['bins']), number(cycles['xla']) + mark, number(cycles['official']), number(cycles['stage2']), number(cycles['ours']), change(cycles['ours'], cycles['official']), exact_ours])
-    values['TABLE:approxtime'] = table(['形状', 'k', '候选数', '原生 XLA', '官方 Pallas', '只换第二阶段', '两阶段都换', '两阶段都换相对官方', '精确：本文的通用分派'], rows, left=3)
+    values['TABLE:approxtime'] = table(['形状', '$k$', '候选数', '原生 XLA', '官方 Pallas', '只换第二阶段', '两阶段都换', '两阶段都换相对官方', '精确：本文的通用分派'], rows, left=3)
     saving = {shape: 1 - found['ours']['median'] / found['official']['median'] for shape, found in timed.items()}
     assert [shape for shape, value in saving.items() if value < 0] == [(64, 4096, 8)]
     faster = [value for value in saving.values() if value > 0]
@@ -292,8 +292,8 @@ def main() -> None:
     model = (
         ('官方的链，每轮', '`[8,128]`', 'XLU 往返', 79, chain),
         ('官方的链，每轮', '`[8,1024]`', 'XLU 往返，两次', 79 + 69, wide_chain),
-        ('秩计数，k = 16', '`[8,128]`', 'XLU 发射', issue, best['basic16'][2]),
-        ('折叠后数秩，k = 8', '`[8,128]`', 'XLU 往返，三趟', 126 + 69 + 79, folded['reorder'][8, 8]),
+        ('秩计数，$k = 16$', '`[8,128]`', 'XLU 发射', issue, best['basic16'][2]),
+        ('折叠后数秩，$k = 8$', '`[8,128]`', 'XLU 往返，三趟', 126 + 69 + 79, folded['reorder'][8, 8]),
     )
     values['TABLE:model'] = table(['写法', '形状', '框架判断的瓶颈', '下限', '实测', '下限占实测'], [[name, shape, kind, number(bound), number(measured), f'{bound / measured * 100:.0f}%'] for name, shape, kind, bound, measured in model], left=3)
     values['model:chain-extra'] = number(chain - 79)

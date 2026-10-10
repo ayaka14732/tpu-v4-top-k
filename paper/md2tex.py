@@ -1,6 +1,6 @@
 """把英文版报告 report.en.md 转成 ACM acmart（sigconf，nonacm）的 LaTeX 源文件 main.tex，并把 figures/en/ 中的 SVG 转成 PDF。
 
-转换只处理 report.en.md 用到的 Markdown：标题、段落、列表、代码块、表格、图、粗体、行内代码和链接。正文中的 [n] 换成 \\cite，按 REFERENCES 的顺序对应 references.bib 中的条目；“Section 3.4”“Table 6”“Figure 2”“Appendix C.1”换成 \\ref。表格按估计的宽度放进单栏的 table 或通栏的 table*。生成的源文件只含 ASCII，pdflatex、xelatex 与 lualatex 都能编译。
+转换只处理 report.en.md 用到的 Markdown：标题、段落、列表、代码块、表格、图、粗体、行内代码、$...$ 行内数学和链接。数学表达式原样传给 LaTeX，变量用数学斜体，函数名用 \\max、\\min、\\log 等正体命令；代码仍用等宽字体。正文中的 [n] 换成 \\cite，按 REFERENCES 的顺序对应 references.bib 中的条目；“Section 3.4”“Table 6”“Figure 2”“Appendix C.1”换成 \\ref。表格按估计的宽度放进单栏的 table 或通栏的 table*。生成的源文件只含 ASCII，pdflatex、xelatex 与 lualatex 都能编译。
 
 SVG 转 PDF 需要 cairosvg（pip install cairosvg）。
 """
@@ -134,20 +134,16 @@ def references(text: str) -> str:
     return re.sub(pattern, replace, text)
 
 def prose(text: str) -> str:
-    """不含行内代码的一段文字。"""
+    """不含行内代码和数学表达式的一段文字。"""
     text = re.sub(r'\b[Tt]his report\b', lambda m: m[0][0] + 'his paper', text)
     text = text.replace('in the report', 'in the paper')
-    # 正文中零星的下标写法，如 A_b、max_b。
-    text = re.sub(r'\b(max|min)_([0-9a-z])\b', r'@@\\\1_{\2}@@', text)
-    text = re.sub(r'\b([A-Z])_([0-9a-z])\b', r'@@\1_{\2}@@', text)
+    # 正文中的常量标识符仍是代码，不从普通文字猜测数学变量。
     text = re.sub(r'\b([A-Z]+(?:_[A-Z]+)+)\b', lambda m: '@@CODE' + m[1] + '@@', text)
     parts = re.split(r'(@@.*?@@)', text)
     out = []
     for part in parts:
         if part.startswith('@@CODE'):
             out.append(code(part[6:-2]))
-        elif part.startswith('@@'):
-            out.append(f'${part[2:-2]}$')
         else:
             out.append(plain(part))
     return ''.join(out)
@@ -166,12 +162,25 @@ def plain(text: str) -> str:
     return references(text)
 
 def inline(text: str) -> str:
-    """一行 Markdown 文字：行内代码原样转义，其余按 prose 处理。"""
+    """一行 Markdown：代码转义、数学原样保留，其余按 prose 处理。"""
     # 粗体可能跨过行内代码，先换成控制字符，转换完再换回。
     text = re.sub(r'\*\*(.+?)\*\*', '\x04\\1\x05', text)
-    parts = re.split(r'(`[^`]+`)', text)
-    out = ''.join(code(part[1:-1]) if part.startswith('`') else prose(part) for part in parts)
+    parts = re.split(r'(`[^`]+`|\$[^$]+\$)', text)
+    out = ''.join(code(part[1:-1]) if part.startswith('`') else part if part.startswith('$') else prose(part) for part in parts)
     return out.replace('\x04', '\\textbf{').replace('\x05', '}')
+
+def heading(text: str) -> str:
+    """标题中的数学正常排版；PDF 书签和元数据使用不带数学定界符的文字。"""
+    formatted = inline(text)
+    return f'\\texorpdfstring{{{formatted}}}{{{inline(text.replace("$", ""))}}}' if '$' in text else formatted
+
+def visible(text: str) -> int:
+    """估计表格宽度：不把数学定界符和命令名当作可见字符。"""
+    text = re.sub(r'\\(?:mathit|mathrm)\{([^}]+)\}', r'\1', text)
+    text = re.sub(r'\\operatorname\{([^}]+)\}', r'\1', text)
+    text = re.sub(r'\\(max|min|log)\b', r'\1', text)
+    text = re.sub(r'\\[A-Za-z]+', 'x', text)
+    return len(re.sub(r'`|\*\*|[$^_{}]', '', text))
 
 def wrap(words: list[str], width: int) -> list[str]:
     lines: list[str] = []
@@ -190,14 +199,13 @@ def table(rows: list[str], caption: str | None) -> str:
     cells = [[cell.strip() for cell in row.strip().strip('|').split('|')] for row in rows]
     header, spec, body = cells[0], cells[1], cells[2:]
     align = ['r' if column.endswith(':') else 'l' for column in spec]
-    visible = lambda cell: len(re.sub(r'`|\*\*', '', cell))
     content = [max(visible(row[i]) for row in body) for i in range(len(header))]
     measure = lambda heads: sum(max(content[i], max(map(visible, heads[i]))) for i in range(len(header))) + 3 * len(header)
     heads = [[cell] for cell in header]
     split = []
     for i, cell in enumerate(header):
         words = cell.split(' ')
-        lines = wrap(words, max(content[i], -(-visible(cell) // 2))) if visible(cell) > content[i] + 4 and len(words) > 1 and '`' not in cell else [cell]
+        lines = wrap(words, max(content[i], -(-visible(cell) // 2))) if visible(cell) > content[i] + 4 and len(words) > 1 and '`' not in cell and '$' not in cell else [cell]
         split.append(lines if max(map(len, lines)) < len(cell) else [cell])
     if measure(heads) > 52 and measure(split) <= 52:
         heads = split
@@ -278,7 +286,7 @@ def convert(markdown: str) -> str:
             i = end + 1
             continue
         if line.startswith('# '):
-            out.append(f'\\title{{{inline(line[2:])}}}\n')
+            out.append(f'\\title{{{heading(line[2:])}}}\n')
             out.append(AUTHORS)
             i += 1
             continue
@@ -286,7 +294,7 @@ def convert(markdown: str) -> str:
             title = line[3:]
             if section == 'abstract':
                 out.append('\\begin{abstract}\n' + '\n\n'.join(abstract) + '\n\\end{abstract}\n')
-                out.append(f'\\keywords{{{keywords}}}\n')
+                out.append(f'\\keywords{{{heading(keywords)}}}\n')
                 out.append('\\maketitle\n')
                 out.append('{\\renewcommand{\\thefootnote}{}%\n' + notes + '\n}\n')
             if title == 'Abstract':
@@ -298,11 +306,11 @@ def convert(markdown: str) -> str:
                 letter, name = title[len('Appendix '):].split(' ', 1)
                 if letter == 'A':
                     out.append('\\appendix\n')
-                out.append(f'\\section{{{inline(name)}}}\n\\label{{sec:{letter}}}\n')
+                out.append(f'\\section{{{heading(name)}}}\n\\label{{sec:{letter}}}\n')
                 section = 'appendix'
             else:
                 number, name = title.split(' ', 1)
-                out.append(f'\\section{{{inline(name)}}}\n\\label{{sec:{number}}}\n')
+                out.append(f'\\section{{{heading(name)}}}\n\\label{{sec:{number}}}\n')
                 section = 'body'
             i += 1
             continue
@@ -311,12 +319,12 @@ def convert(markdown: str) -> str:
             continue
         if line.startswith('### '):
             number, name = line[4:].split(' ', 1)
-            out.append(f'\\subsection{{{inline(name)}}}\n\\label{{sec:{number}}}\n')
+            out.append(f'\\subsection{{{heading(name)}}}\n\\label{{sec:{number}}}\n')
             i += 1
             continue
         if section == 'abstract':
             if line.startswith('**Keywords**: '):
-                keywords = ', '.join(inline(word) for word in line[len('**Keywords**: '):].split('; '))
+                keywords = ', '.join(line[len('**Keywords**: '):].split('; '))
             else:
                 abstract.append(inline(line))
             i += 1

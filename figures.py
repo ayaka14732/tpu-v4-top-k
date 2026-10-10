@@ -54,9 +54,9 @@ ENGLISH = {
     '第 1 次比较后': 'After comparison 1',
     '第 2 次比较后': 'After comparison 2',
     '1 整体转置': '1 Full transpose',
-    '[R,128]：第 r 行': '[R,128]: row r',
-    '[128,R]：': '[128,R]:',
-    '第 r 个通道': 'lane r',
+    '[$R$,128]：第 $r$ 行': '[$R$,128]: row $r$',
+    '[128,$R$]：': '[128,$R$]:',
+    '第 $r$ 个通道': 'lane $r$',
     '2 每个子通道排出候选列': '2 Candidate columns per sublane',
     '一个通道上的 8 条候选列，各 8 层，降序': '8 descending columns of 8 per lane',
     '列首（第 0 层）参加比赛': 'Heads (level 0) compete',
@@ -94,7 +94,10 @@ class Svg:
         self.parts: list[str] = [f'<rect x="0" y="0" width="{width}" height="{height}" fill="{SURFACE}"/>']
 
     def text(self, x: float, y: float, content: str, *, size: float = 13, anchor: str = 'start', color: str = INK, weight: str = 'normal') -> None:
-        self.parts.append(f'<text x="{x:.1f}" y="{y:.1f}" font-size="{size}" text-anchor="{anchor}" fill="{color}" font-weight="{weight}">{escape(translate(content))}</text>')
+        # $...$ 只标记数学变量；数字、标点、单位与说明文字保持正体。
+        parts = re.split(r'(\$[^$]+\$)', translate(content))
+        text = ''.join(f'<tspan font-family="Liberation Serif, serif" font-style="italic">{escape(part[1:-1])}</tspan>' if part.startswith('$') else escape(part) for part in parts)
+        self.parts.append(f'<text x="{x:.1f}" y="{y:.1f}" font-size="{size}" text-anchor="{anchor}" fill="{color}" font-weight="{weight}">{text}</text>')
 
     def line(self, x1: float, y1: float, x2: float, y2: float, *, color: str = MUTED, width: float = 1, dash: str = '', arrow: bool = False) -> None:
         extra = (f' stroke-dasharray="{dash}"' if dash else '') + (' marker-end="url(#arrow)"' if arrow else '')
@@ -150,7 +153,7 @@ def xlu_figure() -> None:
     cell = 9
     # 左：逐元素。
     svg.text(20, 28, '逐元素：向量 ALU', size=15, weight='bold')
-    for i, name in enumerate(('TC VREG a', 'TC VREG b')):
+    for i, name in enumerate(('TC VREG $a$', 'TC VREG $b$')):
         y = 60 + i * 100
         grid(svg, 20, y, 8, 16, cell, fill=lambda r, c: HIGHLIGHT if (r, c) == (2, 5) else SURFACE)
         svg.text(20, y - 8, name, size=12, color=MUTED)
@@ -200,7 +203,7 @@ def basic_figure(cases: dict[str, dict[str, float]]) -> None:
     low, high = math.log10(100), math.log10(20000)
     x = lambda k: left + math.log2(k) / 7 * width
     y = lambda v: top + (high - math.log10(v)) / (high - low) * height
-    axes(svg, left, top, width, height, [(y(v), str(v)) for v in (100, 300, 1000, 3000, 10000)], [(x(k), str(k)) for k in ks], '周期数（对数刻度）', 'k')
+    axes(svg, left, top, width, height, [(y(v), str(v)) for v in (100, 300, 1000, 3000, 10000)], [(x(k), str(k)) for k in ks], '周期数（对数刻度）', '$k$')
     for name, color, dash, values in series:
         points = [(x(k), y(v)) for k, v in zip(ks, values)]
         svg.path(points, color=color, dash=dash)
@@ -249,12 +252,12 @@ def loser_figure() -> None:
     svg.text(20, 28, '1 整体转置', size=14, weight='bold')
     svg.rect(20, 50, 120, 40, fill=SURFACE, stroke=MUTED)
     svg.rect(20, 62, 120, 8, fill=SOURCE)
-    svg.text(20, 108, '[R,128]：第 r 行', size=12, color=MUTED)
+    svg.text(20, 108, '[$R$,128]：第 $r$ 行', size=12, color=MUTED)
     svg.line(150, 70, 180, 70, arrow=True)
     svg.rect(190, 40, 40, 120, fill=SURFACE, stroke=MUTED)
     svg.rect(202, 40, 8, 120, fill=SOURCE)
-    svg.text(190, 178, '[128,R]：', size=12, color=MUTED)
-    svg.text(190, 196, '第 r 个通道', size=12, color=MUTED)
+    svg.text(190, 178, '[128,$R$]：', size=12, color=MUTED)
+    svg.text(190, 196, '第 $r$ 个通道', size=12, color=MUTED)
     # 2：候选列。
     x = 320
     svg.text(x, 28, '2 每个子通道排出候选列', size=14, weight='bold')
@@ -304,7 +307,7 @@ def rows_figure() -> None:
         y = lambda v: top + (1 - v / ceiling) * height
         step = 200 if k == 8 else 500
         axes(svg, left, top, width, height, [(y(v), str(v)) for v in range(0, ceiling + 1, step)], [(x(r), str(r)) for r in (8, 32, 64, 96, 128)], '周期数', '行数')
-        svg.text(left + width / 2, 24, f'k = {k}', size=14, anchor='middle', weight='bold')
+        svg.text(left + width / 2, 24, f'$k$ = {k}', size=14, anchor='middle', weight='bold')
         svg.path([(x(r), y(v)) for r, v in zip(rows, official)], color=OFFICIAL)
         svg.path([(x(r), y(v)) for r, v in zip(rows, loser)], color=REWRITE)
         svg.text(x(rows[-1]) + 6, y(official[-1]) + 4, '官方 Pallas', size=12)
@@ -350,7 +353,7 @@ def overview_figure(cases: dict[str, dict[str, float]]) -> None:
             if label in candidates and candidates[label] < ours:
                 ours, kind = candidates[label], PATCH if label in ('basic8', 'basic16', 'basic32', 'rows16_16') else REWRITE
             ratio = ours / found['official']
-            shape = f"[{found['rows']},{found['width']}] k={found['k']}" + (' 沿 axis 0' if found['axis'] == 0 else '')
+            shape = f"[{found['rows']},{found['width']}] $k$={found['k']}" + (' 沿 axis 0' if found['axis'] == 0 else '')
             svg.text(left - 10, y + 13, shape, size=12, anchor='end', color=MUTED)
             start, end = sorted((x(1), x(ratio)))
             svg.rect(start, y + 3, max(end - start, 1), 14, fill=kind, radius=2)

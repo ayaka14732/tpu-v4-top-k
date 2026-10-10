@@ -23,7 +23,7 @@
 <text x="490.0" y="318.0" font-size="12" text-anchor="middle" fill="#52514e" font-weight="normal">128</text>
 <line x1="70.0" y1="300.0" x2="490.0" y2="300.0" stroke="#52514e" stroke-width="1"/>
 <text x="62.0" y="30.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">Cycles (log scale)</text>
-<text x="280.0" y="338.0" font-size="12" text-anchor="middle" fill="#52514e" font-weight="normal">k</text>
+<text x="280.0" y="338.0" font-size="12" text-anchor="middle" fill="#52514e" font-weight="normal"><tspan font-family="Liberation Serif, serif" font-style="italic">k</tspan></text>
 <path d="M70.0,153.2 L250.0,140.8 L310.0,140.8 L370.0,140.8 L490.0,140.9" fill="none" stroke="#8f8e88" stroke-width="2" stroke-linejoin="round" stroke-dasharray="6 4"/>
 <circle cx="70.0" cy="153.2" r="4" fill="#8f8e88" stroke="#ffffff" stroke-width="2"/>
 <circle cx="250.0" cy="140.8" r="4" fill="#8f8e88" stroke="#ffffff" stroke-width="2"/>
