@@ -372,7 +372,7 @@ This formulation, called `phased`, takes 717 cycles and has no data-dependent br
 
 Table 5: Cycles of the fixes on `f32[8,128]` with $k = 8$ (`fixes.py`, `total_order.py`). Native XLA takes 2564 cycles in the same interval.
 
-The answer to RQ1 is that the official implementation's errors go beyond the duplicate indices admitted in the comment: with `totalOrder` as the definition, it is wrong on 70706 of 197592 inputs. Fixing only the reselection costs almost nothing, and fixing to bitwise correctness costs 32 more cycles, only 4.7%. "Fixing is expensive" holds only for the naive masking formulation. Whether fixed or not, Pallas remains much faster than native XLA.
+The answer to RQ1 is that the official implementation's errors go beyond the duplicate indices admitted in the comment: with `totalOrder` as the definition, it is wrong on 70706 of 197592 inputs. Fixing only the reselection costs almost nothing (Table 5), and fixing to bitwise correctness costs 32 more cycles, only 4.7%. "Fixing is expensive" holds only for the naive masking formulation. Whether fixed or not, Pallas remains much faster than native XLA.
 
 ## 5 Speedups Using Only Pallas
 
@@ -395,7 +395,7 @@ Marking selection does not actually need the full index. We reorganize the data 
 
 Table 6: Wide rows, along the last dimension.
 
-Ours is faster than both baselines on all six shapes. Official Pallas is slower than native XLA on `[8,1024]` with $k = 32$: its cycle count grows linearly with $k$, while XLA uses a fused sort-then-take-prefix implementation for this shape.
+Ours is faster than both baselines on all six shapes (Table 6). Official Pallas is slower than native XLA on `[8,1024]` with $k = 32$: its cycle count grows linearly with $k$, while XLA uses a fused sort-then-take-prefix implementation for this shape.
 
 ### 5.2 The Vertical Direction: No XLU at All
 
@@ -419,7 +419,7 @@ We use three formulations in this direction, chosen by the number of rows and $k
 
 Table 7: The vertical direction, along axis 0.
 
-Native XLA is a much stronger opponent in this direction: with $k = 32$, official Pallas is slower than it at 32, 64, and 128 rows, about 2.5 times slower at 32 rows. Ours is faster than both on all seven shapes; its smallest advantage over native XLA is on top 32 of `[32,128]`.
+Native XLA is a much stronger opponent in this direction (Table 7): with $k = 32$, official Pallas is slower than it at 32, 64, and 128 rows, about 2.5 times slower at 32 rows. Ours is faster than both on all seven shapes; its smallest advantage over native XLA is on top 32 of `[32,128]`.
 
 ### 5.3 Large $k$: Removing the Serial Dependence
 
@@ -453,7 +453,7 @@ Table 8: `f32[8,128]` along the last dimension, $k$ from 1 to 128. Ours uses `ph
 
 Figure 2: The three curves of Table 8. The horizontal axis is evenly spaced in $\log_2 k$.
 
-The three curves have different shapes (Figure 2). Native XLA sorts the whole row, so its cycle count does not depend on $k$ ($k = 1$ uses a different implementation). Official Pallas is proportional to $k$; native XLA overtakes it at $k = 32$, and at $k = 128$ it is four times native XLA. Ours switches to rank counting for $k$ of at least 16 and is faster than both. For $k$ of 1 and 8, ours takes 32 more cycles than official Pallas; this is the cost of bitwise correctness from Section 4.9, and it is most visible in relative terms at $k = 1$.
+The three curves have different shapes (Table 8 and Figure 2). Native XLA sorts the whole row, so its cycle count does not depend on $k$ ($k = 1$ uses a different implementation). Official Pallas is proportional to $k$; native XLA overtakes it at $k = 32$, and at $k = 128$ it is four times native XLA. Ours switches to rank counting for $k$ of at least 16 and is faster than both. For $k$ of 1 and 8, ours takes 32 more cycles than official Pallas; this is the cost of bitwise correctness from Section 4.9, and it is most visible in relative terms at $k = 1$.
 
 ### 5.4 Many Rows: The XLU Runs Out of Room
 
@@ -476,7 +476,7 @@ There are two remedies.
 
 Table 9: Row width 128, $k = 8$, along the last dimension: the official chain, `phased`, `phased_gather` which computes only indices and fetches values at the end, and `transposed` which merges along sublanes after a transpose.
 
-For $k = 8$ the dispatcher chooses accordingly: the transpose for 64 to 128 rows, the chain that fetches values at the end for more rows, and `phased` otherwise.
+For $k = 8$ the dispatcher follows Table 9: the transpose for 64 to 128 rows, the chain that fetches values at the end for more rows, and `phased` otherwise.
 
 Whether the transpose pays off for other $k$ depends on $k$. Table 10 measures $k$ of 2, 4, 16, and 32 at 16, 64, and 128 rows; the column "No transpose" is the formulation the dispatcher chooses without the transpose.
 
@@ -511,7 +511,7 @@ For $k$ of 16 and 32, the transpose is faster than both the official and the non
 
 Table 11: Many rows, row width 128, along the last dimension.
 
-This table includes cases the general dispatcher does not handle well, and we report them as they are. From 96 rows on, ours is faster than official Pallas. At 64 rows and below, ours is instead 7% to 9% slower than official Pallas. Why this range is hard and how to solve it is the subject of Chapter 6. Relative to native XLA, all shapes are at least 45% faster.
+Table 11 includes cases the general dispatcher does not handle well, and we report them as they are. From 96 rows on, ours is faster than official Pallas. At 64 rows and below, ours is instead 7% to 9% slower than official Pallas. Why this range is hard and how to solve it is the subject of Chapter 6. Relative to native XLA, all shapes are at least 45% faster.
 
 ### 5.5 Dispatch
 
@@ -579,7 +579,7 @@ This handwritten program (`folded_select.py`) is placed in the same timing inter
 
 Table 12: Handwritten fold-and-rank on `f32[8,128]`, deployed by executable rewriting.
 
-It has no data-dependent branches and needs no fallback; inputs with special values read the same, and indices are stable among identical bit patterns. So the basic shape can be faster too: with $k = 8$ it is 15% faster than official Pallas and 77% faster than native XLA. The price is a fully handwritten program with the shape fixed at 8 rows; Chapter 7 deals with this price.
+It has no data-dependent branches and needs no fallback; inputs with special values read the same, and indices are stable among identical bit patterns. So the basic shape can be faster too (Table 12): with $k = 8$ it is 15% faster than official Pallas and 77% faster than native XLA. The price is a fully handwritten program with the shape fixed at 8 rows; Chapter 7 deals with this price.
 
 ### 6.3 Full Transpose: Keeping $k$ Rounds, Changing the Path of Each Round
 
@@ -597,7 +597,7 @@ Throughout, the XLU is used only once at each end (transposing in and transposin
 
 A direct eight-way merge must broadcast each of the eight column heads and make seven comparisons every round, all of it on every round. But only one column head changes per round, and the comparison results among the other seven can be kept.
 
-This is exactly what a loser tree [32] is for. The eight column heads play pairwise, the four winners play again, three levels and seven matches in all; each internal node records the loser of its match, and the winner at the root is the global maximum. After it is output, only its column gets a new head. The three subtrees next to the path from that leaf to the root are unchanged, and their winners are exactly the losers recorded at the three nodes on the path. So the new column head only needs to play the three losers along this path in turn to rebuild the whole tree, and the other four nodes remain valid. Each round goes from seven comparisons to three and no longer needs to broadcast eight column heads.
+This is exactly what a loser tree [32] is for (Figure 4). The eight column heads play pairwise, the four winners play again, three levels and seven matches in all; each internal node records the loser of its match, and the winner at the root is the global maximum. After it is output, only its column gets a new head. The three subtrees next to the path from that leaf to the root are unchanged, and their winners are exactly the losers recorded at the three nodes on the path. So the new column head only needs to play the three losers along this path in turn to rebuild the whole tree, and the other four nodes remain valid. Each round goes from seven comparisons to three and no longer needs to broadcast eight column heads.
 
 ![](figures/en/loser.svg)
 
@@ -619,7 +619,7 @@ The transpose and the sorting into candidate columns are ordinary Pallas source;
 
 Table 13: Row width 128, $k = 8$, along the last dimension: full transpose with a loser tree (executable rewriting), compared with the two baselines, our general dispatcher, and `transposed` written in Pallas source from Section 5.4.
 
-The gap left by Chapter 5 is closed: at every number of rows from 16 to 64 (Figure 5), it is 2.7% to 6.4% faster than official Pallas, the 16, 32, and 64 rows in the table being three of them; at 96 rows it is 16.4% faster. Its cycle count grows very slowly with the number of rows, only 117 cycles more from 16 to 128 rows, because extra rows only occupy more lanes and add only to the transposes at both ends, whereas the official chain slows down quickly once the XLU is saturated. Compared with `transposed`, which also transposes first but merges in Pallas source, it saves over a hundred cycles at every number of rows; this is the gain from replacing the merge with a loser tree. The instruction counts agree: at 16 rows the loser-tree kernel has 394 bundles, 103 fewer than `transposed`; 726 vector ALU instructions, 178 fewer; and 67 loads, of which 44 are the algorithm's own indexed and patterned loads, leaving only 23 for spill reloads.
+The gap left by Chapter 5 is closed: at every number of rows from 16 to 64 (Figure 5), it is 2.7% to 6.4% faster than official Pallas, the 16, 32, and 64 rows in Table 13 being three of them; at 96 rows it is 16.4% faster. Its cycle count grows very slowly with the number of rows, only 117 cycles more from 16 to 128 rows, because extra rows only occupy more lanes and add only to the transposes at both ends, whereas the official chain slows down quickly once the XLU is saturated. Compared with `transposed`, which also transposes first but merges in Pallas source, it saves over a hundred cycles at every number of rows; this is the gain from replacing the merge with a loser tree. The instruction counts agree: at 16 rows the loser-tree kernel has 394 bundles, 103 fewer than `transposed`; 726 vector ALU instructions, 178 fewer; and 67 loads, of which 44 are the algorithm's own indexed and patterned loads, leaving only 23 for spill reloads.
 
 Numbers of rows that are not multiples of 8 work the same way, with the output transpose rounded up to 8 rows. The left panel of Figure 5 shows all 121 numbers of rows from 8 to 128, each compiled, checked, and timed separately; the numbers row by row are in Table 23 of Appendix C.5. Within the same number of TC VREGs its cycle count is nearly constant, while the official one fluctuates slightly. It is faster than official on all 121 shapes, by at least 1.2% and at most 35.1%.
 
@@ -655,7 +655,7 @@ The program of Section 6.2 is faster than both baselines, at the price of being 
 
 The most direct approach is to register a JAX primitive and emit the low-level `llo.*` ops directly in its Mosaic lowering rule. This does not work (`llo_op_probe.py`): Mosaic's layout inference knows only ops of the `tpu`, `vector`, and `arith` dialects, and every `llo.*` op with vector operands or results is rejected in the `infer-vector-layout` pass, including `llo.vxpose`, which Mosaic itself emits; moreover, the LLO dialect at the MLIR level has no ops related to IARs, and its transpose mode attribute has only three values, none of them the segmented transpose.
 
-What works is the reverse: where the instruction should be used in the Pallas source, write an operation the compiler knows as a placeholder, and after compilation use tpuasm to replace only the placeholder. The array shapes, which register each value lives in, and which bundle each instruction is in are all already decided by the compiler. The placeholder is an XOR with a unique immediate, `x ^ M`: the compiler knows nothing about $M$ and cannot simplify it, and the rewriter can recognize it in the listing and read off the source and destination registers. Two-operand instructions use "XOR then subtract", since the compiler does not reassociate two different operations. We built four such intrinsics (`asm_intrinsics.py`):
+What works is the reverse: where the instruction should be used in the Pallas source, write an operation the compiler knows as a placeholder, and after compilation use tpuasm to replace only the placeholder. The array shapes, which register each value lives in, and which bundle each instruction is in are all already decided by the compiler. The placeholder is an XOR with a unique immediate, `x ^ M`: the compiler knows nothing about $M$ and cannot simplify it, and the rewriter can recognize it in the listing and read off the source and destination registers. Two-operand instructions use "XOR then subtract", since the compiler does not reassociate two different operations. We built the four intrinsics in Table 14 (`asm_intrinsics.py`):
 
 | Function | Semantics | Replacement instructions |
 | --- | --- | --- |
@@ -701,7 +701,7 @@ Unlike the compiler, the rescheduled program cannot spill when registers run out
 
 ### 7.3 Patching libtpu in Process
 
-Rewriting the executable is always a fix after compilation. Something closer to "fixing it" is to go down Mosaic's compilation pipeline and find the missing layer. If Pallas's maintainers were to support these instructions, these are the places they would change; the only difference is that they can change the source, while we can only change the machine code already loaded in the process. Taking inventory layer by layer, the lower the layer, the more complete it is:
+Rewriting the executable is always a fix after compilation. Something closer to "fixing it" is to go down Mosaic's compilation pipeline and find the missing layer. If Pallas's maintainers were to support these instructions, these are the places they would change; the only difference is that they can change the source, while we can only change the machine code already loaded in the process. Taking inventory layer by layer, the lower the layer, the more complete it is (Table 15):
 
 | Layer | Segmented transpose | Fixed-pattern shuffle | Indexed load | Indexed store |
 | --- | --- | --- | --- | --- |
@@ -734,7 +734,7 @@ In the last configuration, the program the compiler generates from a sixty-line 
 
 ### 7.4 Multiple TC VREGs
 
-With the number of rows as a parameter, we can look at how the algorithm does with more rows.
+Table 17 shows how the algorithm performs with more rows.
 
 | Shape | $k$ | Native XLA | Official Pallas | Our dispatcher | Fold-and-rank | Fold-and-rank, reordered | Reordered vs. official Pallas | Reordered vs. dispatcher |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -819,7 +819,7 @@ The result of an approximate algorithm is not unique, so correctness is checked 
 
 Table 20: Number of inputs with each kind of error among 2752 inputs for Pallas's `approx_max_k` (recall 0.95), and for native XLA's `approx_max_k`. "Second stage replaced" replaces `_top_k_impl` with our general dispatcher; "Both stages replaced" also moves the first stage onto integer keys.
 
-Official Pallas is wrong on 1230 inputs. With only the second stage replaced, duplicate and unpaired indices disappear, but the NaNs lost in the first stage remain, leaving 347; with both stages replaced there are no errors. Native XLA's `approx_max_k` buckets differently and cannot be compared with the reference; its indices are all in range, distinct, and paired with their values, but on raw bit patterns and mixtures of special bit patterns, 601 inputs do not have the global maximum first: on raw bit patterns it skips positive NaNs and returns the largest finite value, and in mixtures of special bit patterns it may place negative NaNs before `+inf`. XLA's documentation does not specify how `approx_max_k` handles NaN, so we only record its difference from the order of Section 4.3 and do not count it as an error.
+In Table 20, official Pallas is wrong on 1230 inputs. With only the second stage replaced, duplicate and unpaired indices disappear, but the NaNs lost in the first stage remain, leaving 347; with both stages replaced there are no errors. Native XLA's `approx_max_k` buckets differently and cannot be compared with the reference; its indices are all in range, distinct, and paired with their values, but on raw bit patterns and mixtures of special bit patterns, 601 inputs do not have the global maximum first: on raw bit patterns it skips positive NaNs and returns the largest finite value, and in mixtures of special bit patterns it may place negative NaNs before `+inf`. XLA's documentation does not specify how `approx_max_k` handles NaN, so we only record its difference from the order of Section 4.3 and do not count it as an error.
 
 | Shape | $k$ | Candidates | Native XLA | Official Pallas | Second stage replaced | Both stages replaced | Both replaced vs. official | Exact: our dispatcher |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -831,7 +831,7 @@ Official Pallas is wrong on 1230 inputs. With only the second stage replaced, du
 
 Table 21: Cycles of `approx_max_k` (recall 0.95) in the timing interval of Section 3.4. The "Exact" column is the cycles of our general dispatcher computing the exact top-$k$ on the same shape (Table 6), with — for shapes not measured there. ‡ is explained in Section 3.4.
 
-With both stages replaced, it is 33% to 53% faster than official Pallas on all shapes except `[64,4096]`, more than twice as fast with $k = 32$: there the official second stage takes the maximum round by round over 640 candidates, exactly the wide-row, larger-$k$ case of Table 6. On `[64,4096]` the first stage dominates, and converting every element to an integer key makes it 2.6% slower than official; replacing only the second stage makes it 4.1% faster but keeps the first stage's NaN loss. Native XLA sorts and takes a prefix inside the interval and moves data through Megacore Shared CMEM; with both stages replaced, ours is 28% to 70% faster.
+With both stages replaced (Table 21), it is 33% to 53% faster than official Pallas on all shapes except `[64,4096]`, more than twice as fast with $k = 32$: there the official second stage takes the maximum round by round over 640 candidates, exactly the wide-row, larger-$k$ case of Table 6. On `[64,4096]` the first stage dominates, and converting every element to an integer key makes it 2.6% slower than official; replacing only the second stage makes it 4.1% faster but keeps the first stage's NaN loss. Native XLA sorts and takes a prefix inside the interval and moves data through Megacore Shared CMEM; with both stages replaced, ours is 28% to 70% faster.
 
 The last column puts approximate and exact side by side: with our formulations for both, the change in cycles of approximate relative to exact is +5% for top 8 of `[8,1024]`, −19% for top 8 of `[8,4096]`, −14% for top 32 of `[8,4096]`, and −26% for top 32 of `[8,8192]`. In this range of row widths, recall 0.95 reduces the candidates only to between a sixteenth and a quarter of the row, and the first stage itself must compare every element once, so the speed bought with recall is at most a quarter, and with row width 1024 and $k = 8$ approximate is even slower than exact.
 
@@ -990,6 +990,8 @@ For these two shapes XLA fuses the sort and the selection of the first $k$ colum
 
 ### C.3 Official Pallas's Errors by Input Class
 
+Table 22 summarizes errors by input class.
+
 | Input class | Inputs | Index out of range | Duplicate index | Value and index unpaired | Bit-pattern sequence differs |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Normal random numbers | 23760 | 0 | 0 | 0 | 0 |
@@ -1010,7 +1012,7 @@ The formula for values holds with ties, but the formula for recovering indices f
 
 ### C.5 Results for Every Number of Rows from 8 to 128
 
-The numbers behind Figure 5 are as follows.
+Table 23 gives the $k = 8$ results behind the left panel of Figure 5.
 
 | Rows | Transpose + loser tree | Official Pallas | Fewer cycles than official |
 | --- | ---: | ---: | ---: |
@@ -1032,6 +1034,8 @@ The numbers behind Figure 5 are as follows.
 | 121–128 | 802–805 | 1235–1237 | 34.8%–35.1% |
 
 Table 23: Row width 128, $k = 8$, every number of rows from 8 to 128, grouped by number of TC VREGs.
+
+Table 24 gives the $k = 16$ results behind the right panel.
 
 | Rows | Official Pallas | Transpose + loser tree | vs. official Pallas |
 | --- | ---: | ---: | ---: |

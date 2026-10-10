@@ -2,6 +2,8 @@
 
 \usepackage{listings}
 \usepackage{makecell}
+\usepackage{float}
+\usepackage{needspace}
 \lstset{basicstyle=\ttfamily\scriptsize, columns=fullflexible, keepspaces=true, breaklines=true, breakatwhitespace=false, showstringspaces=false, upquote=true, frame=none, aboveskip=4pt, belowskip=4pt}
 \newcommand{\code}[1]{\texttt{#1}}
 \setlength{\emergencystretch}{3em}
@@ -471,7 +473,7 @@ MXU suffix ranking & Reselection & 685 & 0\% \\
 \end{tabular}
 \end{table*}
 
-The answer to RQ1 is that the official implementation's errors go beyond the duplicate indices admitted in the comment: with \code{total\allowbreak{}Order} as the definition, it is wrong on 70706 of 197592 inputs. Fixing only the reselection costs almost nothing, and fixing to bitwise correctness costs 32 more cycles, only 4.7\%. ``Fixing is expensive'' holds only for the naive masking formulation. Whether fixed or not, Pallas remains much faster than native XLA.
+The answer to RQ1 is that the official implementation's errors go beyond the duplicate indices admitted in the comment: with \code{total\allowbreak{}Order} as the definition, it is wrong on 70706 of 197592 inputs. Fixing only the reselection costs almost nothing (Table~\ref{tab:5}), and fixing to bitwise correctness costs 32 more cycles, only 4.7\%. ``Fixing is expensive'' holds only for the naive masking formulation. Whether fixed or not, Pallas remains much faster than native XLA.
 
 \section{Speedups Using Only Pallas}
 \label{sec:5}
@@ -504,7 +506,7 @@ Shape & $k$ & Native XLA & Official Pallas & Ours & Ours vs. native XLA & Ours v
 \end{tabular}
 \end{table*}
 
-Ours is faster than both baselines on all six shapes. Official Pallas is slower than native XLA on \code{[8,\allowbreak{}1024]} with $k = 32$: its cycle count grows linearly with $k$, while XLA uses a fused sort-then-take-prefix implementation for this shape.
+Ours is faster than both baselines on all six shapes (Table~\ref{tab:6}). Official Pallas is slower than native XLA on \code{[8,\allowbreak{}1024]} with $k = 32$: its cycle count grows linearly with $k$, while XLA uses a fused sort-then-take-prefix implementation for this shape.
 
 \subsection{The Vertical Direction: No XLU at All}
 \label{sec:5.2}
@@ -539,7 +541,7 @@ Shape & $k$ & Native XLA & Official Pallas & Ours & Ours vs. native XLA & Ours v
 \end{tabular}
 \end{table*}
 
-Native XLA is a much stronger opponent in this direction: with $k = 32$, official Pallas is slower than it at 32, 64, and 128 rows, about 2.5 times slower at 32 rows. Ours is faster than both on all seven shapes; its smallest advantage over native XLA is on top 32 of \code{[32,\allowbreak{}128]}.
+Native XLA is a much stronger opponent in this direction (Table~\ref{tab:7}): with $k = 32$, official Pallas is slower than it at 32, 64, and 128 rows, about 2.5 times slower at 32 rows. Ours is faster than both on all seven shapes; its smallest advantage over native XLA is on top 32 of \code{[32,\allowbreak{}128]}.
 
 \subsection{\texorpdfstring{Large $k$: Removing the Serial Dependence}{Large k: Removing the Serial Dependence}}
 \label{sec:5.3}
@@ -584,7 +586,7 @@ Shape & $k$ & Native XLA & Official Pallas & Ours & Ours vs. native XLA & Ours v
 \label{fig:2}
 \end{figure*}
 
-The three curves have different shapes (Figure~\ref{fig:2}). Native XLA sorts the whole row, so its cycle count does not depend on $k$ ($k = 1$ uses a different implementation). Official Pallas is proportional to $k$; native XLA overtakes it at $k = 32$, and at $k = 128$ it is four times native XLA. Ours switches to rank counting for $k$ of at least 16 and is faster than both. For $k$ of 1 and 8, ours takes 32 more cycles than official Pallas; this is the cost of bitwise correctness from Section~\ref{sec:4.9}, and it is most visible in relative terms at $k = 1$.
+The three curves have different shapes (Table~\ref{tab:8} and Figure~\ref{fig:2}). Native XLA sorts the whole row, so its cycle count does not depend on $k$ ($k = 1$ uses a different implementation). Official Pallas is proportional to $k$; native XLA overtakes it at $k = 32$, and at $k = 128$ it is four times native XLA. Ours switches to rank counting for $k$ of at least 16 and is faster than both. For $k$ of 1 and 8, ours takes 32 more cycles than official Pallas; this is the cost of bitwise correctness from Section~\ref{sec:4.9}, and it is most visible in relative terms at $k = 1$.
 
 \subsection{Many Rows: The XLU Runs Out of Room}
 \label{sec:5.4}
@@ -616,7 +618,7 @@ Rows & Official Pallas & \code{phased} & \code{phased\_\allowbreak{}gather} & \c
 \end{tabular}
 \end{table*}
 
-For $k = 8$ the dispatcher chooses accordingly: the transpose for 64 to 128 rows, the chain that fetches values at the end for more rows, and \code{phased} otherwise.
+For $k = 8$ the dispatcher follows Table~\ref{tab:9}: the transpose for 64 to 128 rows, the chain that fetches values at the end for more rows, and \code{phased} otherwise.
 
 Whether the transpose pays off for other $k$ depends on $k$. Table~\ref{tab:10} measures $k$ of 2, 4, 16, and 32 at 16, 64, and 128 rows; the column ``No transpose'' is the formulation the dispatcher chooses without the transpose.
 
@@ -667,7 +669,7 @@ Shape & $k$ & Native XLA & Official Pallas & Ours & Ours vs. native XLA & Ours v
 \end{tabular}
 \end{table*}
 
-This table includes cases the general dispatcher does not handle well, and we report them as they are. From 96 rows on, ours is faster than official Pallas. At 64 rows and below, ours is instead 7\% to 9\% slower than official Pallas. Why this range is hard and how to solve it is the subject of Section~\ref{sec:6}. Relative to native XLA, all shapes are at least 45\% faster.
+Table~\ref{tab:11} includes cases the general dispatcher does not handle well, and we report them as they are. From 96 rows on, ours is faster than official Pallas. At 64 rows and below, ours is instead 7\% to 9\% slower than official Pallas. Why this range is hard and how to solve it is the subject of Section~\ref{sec:6}. Relative to native XLA, all shapes are at least 45\% faster.
 
 \subsection{Dispatch}
 \label{sec:5.5}
@@ -759,7 +761,7 @@ $k$ & Native XLA & \makecell[rb]{Official\\Pallas} & \makecell[rb]{Our\\dispatch
 \end{tabular}
 \end{table*}
 
-It has no data-dependent branches and needs no fallback; inputs with special values read the same, and indices are stable among identical bit patterns. So the basic shape can be faster too: with $k = 8$ it is 15\% faster than official Pallas and 77\% faster than native XLA. The price is a fully handwritten program with the shape fixed at 8 rows; Section~\ref{sec:7} deals with this price.
+It has no data-dependent branches and needs no fallback; inputs with special values read the same, and indices are stable among identical bit patterns. So the basic shape can be faster too (Table~\ref{tab:12}): with $k = 8$ it is 15\% faster than official Pallas and 77\% faster than native XLA. The price is a fully handwritten program with the shape fixed at 8 rows; Section~\ref{sec:7} deals with this price.
 
 \subsection{\texorpdfstring{Full Transpose: Keeping $k$ Rounds, Changing the Path of Each Round}{Full Transpose: Keeping k Rounds, Changing the Path of Each Round}}
 \label{sec:6.3}
@@ -781,7 +783,7 @@ Throughout, the XLU is used only once at each end (transposing in and transposin
 
 A direct eight-way merge must broadcast each of the eight column heads and make seven comparisons every round, all of it on every round. But only one column head changes per round, and the comparison results among the other seven can be kept.
 
-This is exactly what a loser tree~\cite{knuth1998} is for. The eight column heads play pairwise, the four winners play again, three levels and seven matches in all; each internal node records the loser of its match, and the winner at the root is the global maximum. After it is output, only its column gets a new head. The three subtrees next to the path from that leaf to the root are unchanged, and their winners are exactly the losers recorded at the three nodes on the path. So the new column head only needs to play the three losers along this path in turn to rebuild the whole tree, and the other four nodes remain valid. Each round goes from seven comparisons to three and no longer needs to broadcast eight column heads.
+This is exactly what a loser tree~\cite{knuth1998} is for (Figure~\ref{fig:4}). The eight column heads play pairwise, the four winners play again, three levels and seven matches in all; each internal node records the loser of its match, and the winner at the root is the global maximum. After it is output, only its column gets a new head. The three subtrees next to the path from that leaf to the root are unchanged, and their winners are exactly the losers recorded at the three nodes on the path. So the new column head only needs to play the three losers along this path in turn to rebuild the whole tree, and the other four nodes remain valid. Each round goes from seven comparisons to three and no longer needs to broadcast eight column heads.
 
 \begin{figure*}
 \centering
@@ -815,7 +817,7 @@ Rows & Native XLA & \makecell[rb]{Official\\Pallas} & \makecell[rb]{Our\\dispatc
 \end{tabular}
 \end{table*}
 
-The gap left by Section~\ref{sec:5} is closed: at every number of rows from 16 to 64 (Figure~\ref{fig:5}), it is 2.7\% to 6.4\% faster than official Pallas, the 16, 32, and 64 rows in the table being three of them; at 96 rows it is 16.4\% faster. Its cycle count grows very slowly with the number of rows, only 117 cycles more from 16 to 128 rows, because extra rows only occupy more lanes and add only to the transposes at both ends, whereas the official chain slows down quickly once the XLU is saturated. Compared with \code{transposed}, which also transposes first but merges in Pallas source, it saves over a hundred cycles at every number of rows; this is the gain from replacing the merge with a loser tree. The instruction counts agree: at 16 rows the loser-tree kernel has 394 bundles, 103 fewer than \code{transposed}; 726 vector ALU instructions, 178 fewer; and 67 loads, of which 44 are the algorithm's own indexed and patterned loads, leaving only 23 for spill reloads.
+The gap left by Section~\ref{sec:5} is closed: at every number of rows from 16 to 64 (Figure~\ref{fig:5}), it is 2.7\% to 6.4\% faster than official Pallas, the 16, 32, and 64 rows in Table~\ref{tab:13} being three of them; at 96 rows it is 16.4\% faster. Its cycle count grows very slowly with the number of rows, only 117 cycles more from 16 to 128 rows, because extra rows only occupy more lanes and add only to the transposes at both ends, whereas the official chain slows down quickly once the XLU is saturated. Compared with \code{transposed}, which also transposes first but merges in Pallas source, it saves over a hundred cycles at every number of rows; this is the gain from replacing the merge with a loser tree. The instruction counts agree: at 16 rows the loser-tree kernel has 394 bundles, 103 fewer than \code{transposed}; 726 vector ALU instructions, 178 fewer; and 67 loads, of which 44 are the algorithm's own indexed and patterned loads, leaving only 23 for spill reloads.
 
 Numbers of rows that are not multiples of 8 work the same way, with the output transpose rounded up to 8 rows. The left panel of Figure~\ref{fig:5} shows all 121 numbers of rows from 8 to 128, each compiled, checked, and timed separately; the numbers row by row are in Table~\ref{tab:23} of Appendix~\ref{sec:C.5}. Within the same number of TC VREGs its cycle count is nearly constant, while the official one fluctuates slightly. It is faster than official on all 121 shapes, by at least 1.2\% and at most 35.1\%.
 
@@ -858,7 +860,7 @@ The program of Section~\ref{sec:6.2} is faster than both baselines, at the price
 
 The most direct approach is to register a JAX primitive and emit the low-level \code{llo.\allowbreak{}*} ops directly in its Mosaic lowering rule. This does not work (\code{llo\_\allowbreak{}op\_\allowbreak{}probe.\allowbreak{}py}): Mosaic's layout inference knows only ops of the \code{tpu}, \code{vector}, and \code{arith} dialects, and every \code{llo.\allowbreak{}*} op with vector operands or results is rejected in the \code{infer-vector-layout} pass, including \code{llo.\allowbreak{}vxpose}, which Mosaic itself emits; moreover, the LLO dialect at the MLIR level has no ops related to IARs, and its transpose mode attribute has only three values, none of them the segmented transpose.
 
-What works is the reverse: where the instruction should be used in the Pallas source, write an operation the compiler knows as a placeholder, and after compilation use tpuasm to replace only the placeholder. The array shapes, which register each value lives in, and which bundle each instruction is in are all already decided by the compiler. The placeholder is an XOR with a unique immediate, \code{x \textasciicircum{} M}: the compiler knows nothing about $M$ and cannot simplify it, and the rewriter can recognize it in the listing and read off the source and destination registers. Two-operand instructions use ``XOR then subtract'', since the compiler does not reassociate two different operations. We built four such intrinsics (\code{asm\_\allowbreak{}intrinsics.\allowbreak{}py}):
+What works is the reverse: where the instruction should be used in the Pallas source, write an operation the compiler knows as a placeholder, and after compilation use tpuasm to replace only the placeholder. The array shapes, which register each value lives in, and which bundle each instruction is in are all already decided by the compiler. The placeholder is an XOR with a unique immediate, \code{x \textasciicircum{} M}: the compiler knows nothing about $M$ and cannot simplify it, and the rewriter can recognize it in the listing and read off the source and destination registers. Two-operand instructions use ``XOR then subtract'', since the compiler does not reassociate two different operations. We built the four intrinsics in Table~\ref{tab:14} (\code{asm\_\allowbreak{}intrinsics.\allowbreak{}py}):
 
 \begin{table*}
 \centering
@@ -915,7 +917,7 @@ Unlike the compiler, the rescheduled program cannot spill when registers run out
 \subsection{Patching libtpu in Process}
 \label{sec:7.3}
 
-Rewriting the executable is always a fix after compilation. Something closer to ``fixing it'' is to go down Mosaic's compilation pipeline and find the missing layer. If Pallas's maintainers were to support these instructions, these are the places they would change; the only difference is that they can change the source, while we can only change the machine code already loaded in the process. Taking inventory layer by layer, the lower the layer, the more complete it is:
+Rewriting the executable is always a fix after compilation. Something closer to ``fixing it'' is to go down Mosaic's compilation pipeline and find the missing layer. If Pallas's maintainers were to support these instructions, these are the places they would change; the only difference is that they can change the source, while we can only change the machine code already loaded in the process. Taking inventory layer by layer, the lower the layer, the more complete it is (Table~\ref{tab:15}):
 
 \begin{table*}
 \centering
@@ -967,7 +969,7 @@ In the last configuration, the program the compiler generates from a sixty-line 
 \subsection{Multiple TC VREGs}
 \label{sec:7.4}
 
-With the number of rows as a parameter, we can look at how the algorithm does with more rows.
+Table~\ref{tab:17} shows how the algorithm performs with more rows.
 
 \begin{table*}
 \centering
@@ -1094,7 +1096,7 @@ Both stages replaced & 0 & 0 & 0 & 0 & 0 \\
 \end{tabular}
 \end{table*}
 
-Official Pallas is wrong on 1230 inputs. With only the second stage replaced, duplicate and unpaired indices disappear, but the NaNs lost in the first stage remain, leaving 347; with both stages replaced there are no errors. Native XLA's \code{approx\_\allowbreak{}max\_\allowbreak{}k} buckets differently and cannot be compared with the reference; its indices are all in range, distinct, and paired with their values, but on raw bit patterns and mixtures of special bit patterns, 601 inputs do not have the global maximum first: on raw bit patterns it skips positive NaNs and returns the largest finite value, and in mixtures of special bit patterns it may place negative NaNs before \code{+inf}. XLA's documentation does not specify how \code{approx\_\allowbreak{}max\_\allowbreak{}k} handles NaN, so we only record its difference from the order of Section~\ref{sec:4.3} and do not count it as an error.
+In Table~\ref{tab:20}, official Pallas is wrong on 1230 inputs. With only the second stage replaced, duplicate and unpaired indices disappear, but the NaNs lost in the first stage remain, leaving 347; with both stages replaced there are no errors. Native XLA's \code{approx\_\allowbreak{}max\_\allowbreak{}k} buckets differently and cannot be compared with the reference; its indices are all in range, distinct, and paired with their values, but on raw bit patterns and mixtures of special bit patterns, 601 inputs do not have the global maximum first: on raw bit patterns it skips positive NaNs and returns the largest finite value, and in mixtures of special bit patterns it may place negative NaNs before \code{+inf}. XLA's documentation does not specify how \code{approx\_\allowbreak{}max\_\allowbreak{}k} handles NaN, so we only record its difference from the order of Section~\ref{sec:4.3} and do not count it as an error.
 
 \begin{table*}
 \centering
@@ -1114,7 +1116,7 @@ Shape & $k$ & Candidates & Native XLA & \makecell[rb]{Official\\Pallas} & \makec
 \end{tabular}
 \end{table*}
 
-With both stages replaced, it is 33\% to 53\% faster than official Pallas on all shapes except \code{[64,\allowbreak{}4096]}, more than twice as fast with $k = 32$: there the official second stage takes the maximum round by round over 640 candidates, exactly the wide-row, larger-$k$ case of Table~\ref{tab:6}. On \code{[64,\allowbreak{}4096]} the first stage dominates, and converting every element to an integer key makes it 2.6\% slower than official; replacing only the second stage makes it 4.1\% faster but keeps the first stage's NaN loss. Native XLA sorts and takes a prefix inside the interval and moves data through Megacore Shared CMEM; with both stages replaced, ours is 28\% to 70\% faster.
+With both stages replaced (Table~\ref{tab:21}), it is 33\% to 53\% faster than official Pallas on all shapes except \code{[64,\allowbreak{}4096]}, more than twice as fast with $k = 32$: there the official second stage takes the maximum round by round over 640 candidates, exactly the wide-row, larger-$k$ case of Table~\ref{tab:6}. On \code{[64,\allowbreak{}4096]} the first stage dominates, and converting every element to an integer key makes it 2.6\% slower than official; replacing only the second stage makes it 4.1\% faster but keeps the first stage's NaN loss. Native XLA sorts and takes a prefix inside the interval and moves data through Megacore Shared CMEM; with both stages replaced, ours is 28\% to 70\% faster.
 
 The last column puts approximate and exact side by side: with our formulations for both, the change in cycles of approximate relative to exact is +5\% for top 8 of \code{[8,\allowbreak{}1024]}, $-$19\% for top 8 of \code{[8,\allowbreak{}4096]}, $-$14\% for top 32 of \code{[8,\allowbreak{}4096]}, and $-$26\% for top 32 of \code{[8,\allowbreak{}8192]}. In this range of row widths, recall 0.95 reduces the candidates only to between a sixteenth and a quarter of the row, and the first stage itself must compare every element once, so the speed bought with recall is at most a quarter, and with row width 1024 and $k = 8$ approximate is even slower than exact.
 
@@ -1250,15 +1252,19 @@ is not equal to the fusion shape ((f32[8,8]{1,0:T(8,128)S(1)}, s32[8,8]{1,0:T(8,
 \end{lstlisting}
 For these two shapes XLA fuses the sort and the selection of the first $k$ columns into one \code{sort\_\allowbreak{}prefixfusion}. Saving HLO pass by pass shows that the \code{pin-precoloring} pass adds \code{S(\allowbreak{}1)} to the outside of the fusion but not to the root inside it, and the subsequent consistency check fails. Both ways around it change what is measured: disabling this fusion makes XLA fall back to an ordinary sort, so what is measured is no longer its default implementation; disabling precoloring puts the three endpoints in Megacore Shared CMEM. So we fix it instead: libtpu already contains a pass that propagates memory spaces along fusion parameters and roots (\code{Memory\allowbreak{}Space\allowbreak{}Propagation}, corresponding to the pass of the same name in open-source XLA~\cite{xla-memory-space-propagation}), and \code{pin\_\allowbreak{}propagation.\allowbreak{}py} calls it once after \code{Pin\allowbreak{}Precoloring} succeeds in recoloring, replacing only one vtable pointer in the process and restoring it on exit. The fix is installed only when the original compiler reports this error; after the fix these two shapes keep XLA's original fused implementation and are marked \ddag{} in the tables.
 
+\Needspace{0.5\textheight}
 \subsection{Official Pallas's Errors by Input Class}
 \label{sec:C.3}
 
-\begin{table*}
+Table~\ref{tab:22} summarizes errors by input class.
+
+\begin{table}[H]
 \centering
+\setlength{\tabcolsep}{2.5pt}
 \caption{Official Pallas's errors by input class.}
 \label{tab:22}
 \footnotesize
-\begin{tabular}{lrrrrr}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.28\columnwidth}rrrrr}
 \toprule
 Input class & Inputs & \makecell[rb]{Index out\\of range} & \makecell[rb]{Duplicate\\index} & \makecell[rb]{Value and\\index\\unpaired} & \makecell[rb]{Bit-pattern\\sequence\\differs} \\
 \midrule
@@ -1271,7 +1277,7 @@ Constant bit patterns & 62370 & 1164 & 22538 & 38506 & 38506 \\
 Finite values at the last position & 2970 & 4 & 1930 & 1890 & 0 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 \subsection{Pairwise Extraction}
 \label{sec:C.4}
@@ -1280,12 +1286,13 @@ The pairwise extraction of Section~\ref{sec:6.7} tries to select two places per 
 
 The formula for values holds with ties, but the formula for recovering indices from them requires both places to be unique. So it must be checked, and when the check fails the whole TC VREG falls back to \code{phased}. In the timing interval, it takes 686 cycles when the check passes, on par with the official 685: the chain is shorter, but the masks of the fourteen halves and the fourteen reductions per round trip spend the saved cycles again. On fallback it takes 1362 cycles, twice official, triggered by inputs with only three finite values per row. This path has no benefit and carries an input-dependent worst case, so we do not adopt it.
 
+\Needspace{0.5\textheight}
 \subsection{Results for Every Number of Rows from 8 to 128}
 \label{sec:C.5}
 
-The numbers behind Figure~\ref{fig:5} are as follows.
+Table~\ref{tab:23} gives the $k = 8$ results behind the left panel of Figure~\ref{fig:5}.
 
-\begin{table}
+\begin{table}[H]
 \centering
 \caption{Row width 128, $k = 8$, every number of rows from 8 to 128, grouped by number of TC VREGs.}
 \label{tab:23}
@@ -1314,7 +1321,9 @@ Rows & \makecell[rb]{Transpose +\\loser tree} & \makecell[rb]{Official\\Pallas} 
 \end{tabular}
 \end{table}
 
-\begin{table}
+Table~\ref{tab:24} gives the $k = 16$ results behind the right panel.
+
+\begin{table}[H]
 \centering
 \caption{Row width 128, $k = 16$, along the last dimension: full transpose with a loser tree versus official Pallas.}
 \label{tab:24}

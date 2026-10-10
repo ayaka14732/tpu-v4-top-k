@@ -59,6 +59,8 @@ PREAMBLE = r'''\documentclass[sigconf,nonacm,balance=false]{acmart}
 
 \usepackage{listings}
 \usepackage{makecell}
+\usepackage{float}
+\usepackage{needspace}
 \lstset{basicstyle=\ttfamily\scriptsize, columns=fullflexible, keepspaces=true, breaklines=true, breakatwhitespace=false, showstringspaces=false, upquote=true, frame=none, aboveskip=4pt, belowskip=4pt}
 \newcommand{\code}[1]{\texttt{#1}}
 \setlength{\emergencystretch}{3em}
@@ -192,10 +194,10 @@ def wrap(words: list[str], width: int) -> list[str]:
             lines.append(word)
     return lines
 
-def table(rows: list[str], caption: str | None) -> str:
+def table(rows: list[str], caption: str | None, *, in_place: bool = False) -> str:
     """Markdown 表格转成 booktabs 表格。
 
-    宽度按字符数估计。先不拆表头，单栏放得下就用 table；否则把比内容宽得多的表头拆成两行再试；仍放不下就用通栏的 table*，通栏也放不下时把最宽的左对齐列改成可换行的 p 列。没有标题的表格不加标题，照样浮动。
+    宽度按字符数估计。先不拆表头，单栏放得下就用 table；否则把比内容宽得多的表头拆成两行再试；仍放不下就用通栏的 table*，通栏也放不下时把最宽的左对齐列改成可换行的 p 列。附录 C.3 的错误分类表用换行的类别列和较小的列间距排进单栏；附录的单栏表放在正文原位，避免越过所属小节。
     """
     cells = [[cell.strip() for cell in row.strip().strip('|').split('|')] for row in rows]
     header, spec, body = cells[0], cells[1], cells[2:]
@@ -224,13 +226,21 @@ def table(rows: list[str], caption: str | None) -> str:
         columns[i] = f'>{{\\raggedright\\arraybackslash}}p{{{target / room:.3f}\\linewidth}}'
         heads[i] = [' '.join(heads[i])]
         total -= width[i] - target
+    error_classes = caption is not None and caption.split(': ', 1)[1] == "Official Pallas's errors by input class."
+    if error_classes:
+        wide = False
+        heads = split
+        columns = [r'>{\raggedright\arraybackslash}p{0.28\columnwidth}', *align[1:]]
     environment = 'table*' if wide else 'table'
     head = ['\\centering']
+    if error_classes:
+        head.append(r'\setlength{\tabcolsep}{2.5pt}')
     if caption is not None:
         head += [f'\\caption{{{inline(caption.split(": ", 1)[1])}}}', f'\\label{{tab:{re.match(r"Table (\d+):", caption)[1]}}}']
-    head.append('\\footnotesize' if wide else '\\small')
+    head.append('\\footnotesize' if wide or error_classes else '\\small')
     title = lambda i: inline(heads[i][0]) if len(heads[i]) == 1 else f'\\makecell[{align[i]}b]{{{"\\\\".join(inline(line) for line in heads[i])}}}'
-    lines = [f'\\begin{{{environment}}}', *head, f'\\begin{{tabular}}{{{"".join(columns)}}}', '\\toprule']
+    placement = '[H]' if in_place and not wide else ''
+    lines = [f'\\begin{{{environment}}}{placement}', *head, f'\\begin{{tabular}}{{{"".join(columns)}}}', '\\toprule']
     lines.append(' & '.join(title(i) for i in range(len(header))) + ' \\\\')
     lines.append('\\midrule')
     lines += [' & '.join(inline(cell) for cell in row) + ' \\\\' for row in body]
@@ -320,6 +330,9 @@ def convert(markdown: str) -> str:
             continue
         if line.startswith('### '):
             number, name = line[4:].split(' ', 1)
+            # 以表格为主体的附录小节预留半栏，避免标题留在上一栏末尾。
+            if section == 'appendix' and number in ('C.3', 'C.5'):
+                out.append(r'\Needspace{0.5\textheight}')
             out.append(f'\\subsection{{{heading(name)}}}\n\\label{{sec:{number}}}\n')
             i += 1
             continue
@@ -335,7 +348,7 @@ def convert(markdown: str) -> str:
             while end < len(lines) and lines[end].startswith('|'):
                 end += 1
             caption = lines[end + 1] if end + 1 < len(lines) and lines[end + 1].startswith('Table ') else None
-            out.append(table(lines[i:end], caption) + '\n')
+            out.append(table(lines[i:end], caption, in_place=section == 'appendix') + '\n')
             i = end + (2 if caption else 0)
             continue
         if line.startswith('!['):
