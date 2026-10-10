@@ -54,18 +54,18 @@ GPU 上的精确 top-$k$ 已有系统的研究 [10–14, 33]；TPU 上的已有�
 
 一颗 TPU v4 芯片有两个 TensorCore（下文简称 TC），这两个 TC 合称 Megacore。每个 TC 有自己的标量单元、向量单元、4 个做矩阵乘的 MXU，以及做跨通道运算的 XLU [26, 27]。
 
-数据从远到近经过四层存储，见表 <<T:memory>>。HBM 和 Megacore Shared CMEM 是整颗芯片的一块存储，两个 TC 都能访问全部地址，不分彼此。HBM 与 CMEM 的容量是实测的，测法见附录 C.1；TC VMEM 和 SMEM 的容量取 `pltpu.get_tpu_info()` 报告的值。
+数据从远到近经过四层存储，见表 <<T:memory>>。HBM 和 CMEM 是整颗芯片的一块存储，两个 TC 都能访问全部地址，不分彼此。HBM 与 CMEM 的容量是实测的，测法见附录 C.1；TC VMEM 和 SMEM 的容量取 `pltpu.get_tpu_info()` 报告的值。
 
 | 存储 | 位置与归属 | 容量 | 怎样访问 |
 | --- | --- | --- | --- |
 | HBM | 芯片外，同一颗芯片的两个 TC 共享 | 32 GiB | 只能用 DMA 搬入搬出 |
-| Megacore Shared CMEM | 芯片上，同一颗芯片的两个 TC 共享 | 128 MiB | 用 DMA；或用 `cld` 读进队列 `crf`，再用 `vpop` 取回 TC VREG |
+| CMEM | 芯片上，同一颗芯片的两个 TC 共享 | 128 MiB | 用 DMA；或用 `cld` 读进队列 `crf`，再用 `vpop` 取回 TC VREG |
 | TC VMEM | 芯片上，每个 TC 私有 | 16 MiB | 向量单元用 `vld`、`vst` 读写 |
 | TC VREG | 每个 TC 私有 | 32 个，每个 4 KiB | 向量指令的操作数和结果 |
 
 表 <<T:memory>>：TPU v4 一个 TC 能用到的存储。
 
-程序的参数和结果默认在 HBM，XLA 常把程序中间的数组放在 Megacore Shared CMEM。Pallas kernel 可以声明一块数组在 TC VMEM，由 kernel 自己用 DMA 把数据搬进来。本文只关心数据已经在 TC VMEM 之后的计算（3.5 节）。此外每个 TC 有 1 MiB 的标量存储器 SMEM，由标量单元读写，3.3 节的周期读数就暂存在这里。
+程序的参数和结果默认在 HBM，XLA 常把程序中间的数组放在 CMEM。Pallas kernel 可以声明一块数组在 TC VMEM，由 kernel 自己用 DMA 把数据搬进来。本文只关心数据已经在 TC VMEM 之后的计算（3.5 节）。此外每个 TC 有 1 MiB 的标量存储器 SMEM，由标量单元读写，3.3 节的周期读数就暂存在这里。
 
 **通道与子通道。** 一个 TC VREG 是 $8 \times 128$ 个 32 位的字。8 行称为子通道（sublane），128 列称为通道（lane）。逐元素的向量指令在全部 $8 \times 128$ 个位置上同时做同一件事，一个位置上的两个操作数来自两个寄存器的同一个子通道、同一个通道；要让不同通道或不同子通道上的元素相遇，必须专门把数据挪过去，2.2 节讨论这件事的代价。TC VMEM 也按同样的形状寻址：一个 tile 是 8 行 × 128 个字，一次 `vld` 或 `vst` 读写一个 tile，正好一个 TC VREG。除了 TC VREG，还有 8 个掩码寄存器 `vm0` 至 `vm7`，每个是 $8 \times 128$ 位，存放比较的结果，也用于带掩码的写；以及 2 个索引地址寄存器 IAR，按索引读写时给每个元素提供各自的行偏移（3.2 节）。
 
@@ -188,7 +188,7 @@ def program(x):
     return jax.lax.optimization_barrier((pinned_row(v), pinned_row(i)))
 ```
 
-**内存空间。** 编译后的 HLO 在每个数组的 layout 后面用 `S(n)` 标明它所在的内存空间：不写 `S` 的在 HBM，`S(1)` 是 TC VMEM，`S(3)` 是 Megacore Shared CMEM，这是这一版 TPU 后端的编号。`pin(x, to='vmem')` 生成一条 `Pin` custom call，把结果的内存空间定为 TC VMEM，编译后它的 layout 带有 `S(1)`；`unpin` 把缓冲区句柄变回普通数组。这是 JAX 的内部接口。设备的 `memory_kind` 只有 `device`（HBM）和两种主机内存，不能表达 TC VMEM；公开的 `jax.ref.new_ref(x, memory_space=pltpu.VMEM, pin=True)` 在当前版本中没有把目标内存空间传给 Pin，结果正确但值仍在 HBM。
+**内存空间。** 编译后的 HLO 在每个数组的 layout 后面用 `S(n)` 标明它所在的内存空间：不写 `S` 的在 HBM，`S(1)` 是 TC VMEM，`S(3)` 是 CMEM，这是这一版 TPU 后端的编号。`pin(x, to='vmem')` 生成一条 `Pin` custom call，把结果的内存空间定为 TC VMEM，编译后它的 layout 带有 `S(1)`；`unpin` 把缓冲区句柄变回普通数组。这是 JAX 的内部接口。设备的 `memory_kind` 只有 `device`（HBM）和两种主机内存，不能表达 TC VMEM；公开的 `jax.ref.new_ref(x, memory_space=pltpu.VMEM, pin=True)` 在当前版本中没有把目标内存空间传给 Pin，结果正确但值仍在 HBM。
 
 **布局。** XLA 用布局（layout）描述数组的元素在内存中怎样摆放。2.1 节的摆放方式写作 `{1,0:T(8,128)}`：`{1,0}` 是从变化最快到最慢的维的次序，即第 1 维（列）变化最快；`T(8,128)` 是 tile 的形状，即按 8 个子通道乘 128 个通道切成 tile。Pallas kernel 在 TC VMEM 中的二维 f32 数组采用这种布局，再加上上一段的内存空间 `S(1)`，就是 `{1,0:T(8,128)S(1)}`。计时区间的三个端点（输入和两个结果）都要求是这个布局，原生 XLA 才与 Pallas kernel 从同样的数据出发、交出同样的结果。XLA 会为某些形状选择转置的布局（例如 `[16,8]` 转置之后只占一个 tile），于是在 Pin 与 Unpin 之间插入一条改变布局的 `copy`，而这个位置不允许复制，编译报错。`with_layout_constraint` [7] 把布局固定下来；它必须加在 Unpin 之后，只约束 Pin 之前的输入不够。
 
@@ -196,11 +196,11 @@ def program(x):
 
 计时区间从输入的 Unpin 结束开始，到两个输出中较晚的那个 Unpin 结束为止，只在两端各读一次 LCC，两次读数相减后扣除 20 个周期的读数开销。这里的读数与 3.3 节的不同：它要插进编译器生成的完整程序，不能占用编译器正在使用的标量寄存器，所以每次读数先把借用的两个标量寄存器存进 SMEM，读完再恢复，读数本身也写进 SMEM，连同 `sfence` 共 8 个 bundle；两次这样的读数之间什么都不放，读数是 20 个周期。3.3 节的载体 kernel 是手写的，寄存器可以随意使用，一次读数只占一个 bundle，所以固定开销是 13 个周期。不采用“给每条 HLO 指令各插一对读数再相加”的做法：每次读数带一条 `sfence`，会打断向量指令的重叠，那样得到的总和不等于连续执行的时间。脚本对每个被测的程序核对：三个端点在编译后的 HLO 中都是 `{1,0:T(8,128)S(1)}`；属于 top-$k$ 的指令（包括不依赖输入的 `iota`）全部落在区间内；区间内没有进出 HBM 的 DMA。
 
-所有实现用完全相同的外壳，只有中间的 top-$k$ 不同。Pallas 的实现是一个没有 DMA、没有信号量的 kernel；本文改写过的 executable（第 6、7 章）也在这个外壳里改写和计时。原生 XLA 在区间内可能有自己的搬运，例如把它生成的下标数组从 Megacore Shared CMEM 搬进 TC VMEM，或者经 Megacore Shared CMEM 转置；这些搬运属于 XLA 所选算法的一部分，因此计入它的周期数。
+所有实现用完全相同的外壳，只有中间的 top-$k$ 不同。Pallas 的实现是一个没有 DMA、没有信号量的 kernel；本文改写过的 executable（第 6、7 章）也在这个外壳里改写和计时。原生 XLA 在区间内可能有自己的搬运，例如把它生成的下标数组从 CMEM 搬进 TC VMEM，或者经 CMEM 转置；这些搬运属于 XLA 所选算法的一部分，因此计入它的周期数。
 
 每个程序用 8 份输入各运行一次，每条排序轴上是 0 到 $n - 1$ 的随机排列，舍弃前两次，取后六次的中位数；插入读数前后的程序都逐元素核对全部的值和下标。
 
-所有 Pallas 实现的六次读数完全相同，原生 XLA 的多数程序却有 1 至 3 个周期的波动。区别在于区间里有没有 DMA。指令什么时候发射，由程序本身静态决定：一条指令等的是前面某条指令的结果，或者某个单元空出来，这些都与哪一次运行无关，所以只要区间里只有指令，每次的周期数都相同。原生 XLA 的大多数程序在区间里有 Megacore Shared CMEM 与 TC VMEM 之间的 DMA，等待它完成的那条指令什么时候放行，取决于存储系统当时的状态，这一部分是动态的。这一点可以直接核对（`xla_inputs.py`，输出在 `results/xla-inputs.json`）：每个形状取 4 份不同的输入，每份在同一个程序上重复运行 6 次。<<xi:summary>>
+所有 Pallas 实现的六次读数完全相同，原生 XLA 的多数程序却有 1 至 3 个周期的波动。区别在于区间里有没有 DMA。指令什么时候发射，由程序本身静态决定：一条指令等的是前面某条指令的结果，或者某个单元空出来，这些都与哪一次运行无关，所以只要区间里只有指令，每次的周期数都相同。原生 XLA 的大多数程序在区间里有 CMEM 与 TC VMEM 之间的 DMA，等待它完成的那条指令什么时候放行，取决于存储系统当时的状态，这一部分是动态的。这一点可以直接核对（`xla_inputs.py`，输出在 `results/xla-inputs.json`）：每个形状取 4 份不同的输入，每份在同一个程序上重复运行 6 次。<<xi:summary>>
 
 这个边界比“只量 kernel 中间的一段”严格。与输入无关的准备工作（常数、掩码、下标数组）也算在区间内；如果把起点放在 kernel 内部某次等待之后，编译器会把这些工作排到起点之前，读数就偏小，而且不同的写法偏小的程度不同。
 
@@ -721,7 +721,7 @@ TPU-KNN [17] 的两阶段近似算法在 Pallas 中也有实现。kernel 中调�
 
 表 <<T:approxtime>>：`approx_max_k`（召回率 0.95）在 3.4 节的计时区间内的周期数。“精确”一列是同一形状上本文的通用分派求精确 top-$k$ 的周期数（表 <<T:wide>>），这一组形状没有测的标 —。‡ 的含义见 3.4 节。
 
-两阶段都换之后（表 <<T:approxtime>>），除 `[64,4096]` 外都比官方 Pallas 快 <<approx:saving>>，$k = 32$ 时快一半以上：这时官方的第二阶段在 640 个候选上逐轮求最大，正是表 <<T:wide>> 中宽行、$k$ 较大的情形。`[64,4096]` 上第一阶段占了大头，每个元素先变换成整数键，比官方慢 <<approx:64:ours>>；只换第二阶段则快 <<approx:64:stage2>>，但留着第一阶段丢失 NaN 的问题。原生 XLA 在区间里先排序再取前缀，并经 Megacore Shared CMEM 搬运，两阶段都换之后比它少 <<approx:xla>>。
+两阶段都换之后（表 <<T:approxtime>>），除 `[64,4096]` 外都比官方 Pallas 快 <<approx:saving>>，$k = 32$ 时快一半以上：这时官方的第二阶段在 640 个候选上逐轮求最大，正是表 <<T:wide>> 中宽行、$k$ 较大的情形。`[64,4096]` 上第一阶段占了大头，每个元素先变换成整数键，比官方慢 <<approx:64:ours>>；只换第二阶段则快 <<approx:64:stage2>>，但留着第一阶段丢失 NaN 的问题。原生 XLA 在区间里先排序再取前缀，并经 CMEM 搬运，两阶段都换之后比它少 <<approx:xla>>。
 
 最后一列把近似与精确放在一起：都用本文的写法时，近似相对精确的周期数变化是 <<approx:exact>>。在这一行宽范围内，召回率 0.95 只把候选减到行宽的十六分之一至四分之一，第一阶段本身又要逐元素比较一遍，用召回率换来的速度不超过四分之一，行宽 1024、$k = 8$ 时甚至比精确更慢。
 
@@ -876,7 +876,7 @@ Fused computation shape ((f32[8,8]{1,0:T(8,128)}, s32[8,8]{1,0:T(8,128)}))
 is not equal to the fusion shape ((f32[8,8]{1,0:T(8,128)S(1)}, s32[8,8]{1,0:T(8,128)S(1)}))
 ```
 
-XLA 在这两个形状上把排序和取前 $k$ 列融合成一条 `sort_prefixfusion`。逐个 pass 保存 HLO 可以看到，`pin-precoloring` 这一遍给 fusion 的外层加上了 `S(1)`，fusion 内部的根节点却没有跟着改，随后的一致性检查失败。绕过它的两种办法都改变了被测的东西：关掉这个融合，XLA 改走普通的排序，量到的就不是它默认的实现；关掉预着色，三个端点落到了 Megacore Shared CMEM。所以本文采用的是修复：libtpu 中本来就有一个沿 fusion 的参数和根节点传播内存空间的 pass（`MemorySpacePropagation`，与开源 XLA 中的同名 pass [9] 对应），`pin_propagation.py` 在 `PinPrecoloring` 成功改色之后调用它一次，只替换进程内的一个虚表指针，退出时恢复。修复只在原版编译器报这个错时才装上；这两个形状在修复后保留了 XLA 原本的融合实现，表中标 ‡。
+XLA 在这两个形状上把排序和取前 $k$ 列融合成一条 `sort_prefixfusion`。逐个 pass 保存 HLO 可以看到，`pin-precoloring` 这一遍给 fusion 的外层加上了 `S(1)`，fusion 内部的根节点却没有跟着改，随后的一致性检查失败。绕过它的两种办法都改变了被测的东西：关掉这个融合，XLA 改走普通的排序，量到的就不是它默认的实现；关掉预着色，三个端点落到了 CMEM。所以本文采用的是修复：libtpu 中本来就有一个沿 fusion 的参数和根节点传播内存空间的 pass（`MemorySpacePropagation`，与开源 XLA 中的同名 pass [9] 对应），`pin_propagation.py` 在 `PinPrecoloring` 成功改色之后调用它一次，只替换进程内的一个虚表指针，退出时恢复。修复只在原版编译器报这个错时才装上；这两个形状在修复后保留了 XLA 原本的融合实现，表中标 ‡。
 
 ### C.3 官方 Pallas 的错误按输入类别的分布
 

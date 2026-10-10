@@ -1,4 +1,4 @@
-"""表 1 的容量从哪里来：Megacore Shared CMEM 用地址回绕实测，HBM 读设备的 memory_stats()，再与 pltpu.get_tpu_info() 的报告对照。
+"""表 1 的容量从哪里来：CMEM 用地址回绕实测，HBM 读设备的 memory_stats()，再与 pltpu.get_tpu_info() 的报告对照。
 
 CMEM 不能由 Pallas 分配，容量只能直接测。CMEM 以 512 B 的 granule 编址。片段插在一个载体 kernel 里：把一个 tile（记作 P）写到 CMEM 地址 0，把它的按位取反（记作 Q）写到 granule 地址 A，再把两处读回 TC VMEM 的第 1、2 个 tile，由载体送回主机。A 在容量之内时地址 0 仍是 P；A 超出容量、回绕到地址 0 时，P 被改写成 Q。
 """
