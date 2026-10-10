@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="860" height="300" viewBox="0 0 860 300" font-family="'Noto Sans CJK SC', 'Source Han Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="300" viewBox="0 0 860 300" font-family="'Linux Libertine O', 'Libertinus Serif', 'Times New Roman', serif">
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#52514e"/></marker></defs>
 <rect x="0" y="0" width="860" height="300" fill="#ffffff"/>
 <text x="20.0" y="28.0" font-size="15" text-anchor="start" fill="#0b0b0b" font-weight="bold">Elementwise: vector ALU</text>
@@ -130,7 +130,7 @@
 <rect x="137.0" y="123.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="146.0" y="123.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="155.0" y="123.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
-<text x="20.0" y="52.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">TC VREG <tspan font-family="Liberation Serif, serif" font-style="italic">a</tspan></text>
+<text x="20.0" y="52.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">TC VREG <tspan font-style="italic">a</tspan></text>
 <rect x="20.0" y="160.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="29.0" y="160.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="38.0" y="160.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
@@ -259,7 +259,7 @@
 <rect x="137.0" y="223.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="146.0" y="223.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="155.0" y="223.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
-<text x="20.0" y="152.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">TC VREG <tspan font-family="Liberation Serif, serif" font-style="italic">b</tspan></text>
+<text x="20.0" y="152.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">TC VREG <tspan font-style="italic">b</tspan></text>
 <rect x="220.0" y="110.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="229.0" y="110.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="238.0" y="110.0" width="9.0" height="9.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>

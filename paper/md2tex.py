@@ -2,11 +2,12 @@
 
 转换只处理 report.en.md 用到的 Markdown：标题、段落、列表、代码块、表格、图、粗体、行内代码、$...$ 行内数学和链接。数学表达式原样传给 LaTeX，变量用数学斜体，函数名用 \\max、\\min、\\log 等正体命令；代码仍用等宽字体。正文中的 [n] 换成 \\cite，按 REFERENCES 的顺序对应 references.bib 中的条目；“Section 3.4”“Table 6”“Figure 2”“Appendix C.1”换成 \\ref。表格按估计的宽度放进单栏的 table 或通栏的 table*。生成的源文件只含 ASCII，pdflatex、xelatex 与 lualatex 都能编译。
 
-SVG 转 PDF 需要 cairosvg（pip install cairosvg）。
+SVG 转 PDF 使用 librsvg 的 rsvg-convert，以正确处理混排字形的 text-anchor 和空格；CairoSVG 会把含 tspan 的居中、右对齐标签中的文字重叠。Ubuntu 上安装 librsvg2-bin、fonts-linuxlibertine、fonts-inconsolata、fonts-noto-cjk；PDF 会嵌入字体，保留可选择的矢量文字。
 """
 import argparse
 from pathlib import Path
 import re
+import subprocess
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -357,10 +358,9 @@ def convert(markdown: str) -> str:
     return '\n'.join(out)
 
 def figures(output: Path) -> None:
-    import cairosvg
     output.mkdir(exist_ok=True)
     for svg in sorted((ROOT / 'figures' / 'en').glob('*.svg')):
-        cairosvg.svg2pdf(url=str(svg), write_to=str(output / f'{svg.stem}.pdf'))
+        subprocess.run(['rsvg-convert', '--format=pdf', '--output', str(output / f'{svg.stem}.pdf'), str(svg)], check=True)
 
 def main() -> None:
     parser = argparse.ArgumentParser()

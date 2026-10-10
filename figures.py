@@ -1,6 +1,8 @@
 """生成 report.md 与 report.en.md 中的图：数据图读 results/ 中的记录，示意图按正文的算法画出。中文版输出到 figures/，英文版输出到 figures/en/，只依赖标准库。
 
 颜色按实体固定：官方 Pallas 橙色，原生 XLA 灰色虚线，Pallas 源码写成的本文写法蓝色，改写 executable 的写法青色，进程内补丁的写法紫色。
+
+字体与 ACM 论文一致：拉丁字母用 Linux Libertine，数学变量用它的斜体，代码用 Inconsolata；中文用思源宋体（Noto Serif CJK SC）。生成 SVG 不需要字体库，转换 PDF 时须安装这些字体，以便嵌入真实字形。
 """
 from collections.abc import Callable
 import json
@@ -14,7 +16,9 @@ RESULTS = HERE / 'results'
 FIGURES = HERE / 'figures'
 load = lambda name: json.loads((RESULTS / name).read_text())
 
-FONT = "'Noto Sans CJK SC', 'Source Han Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif"
+FONT = "'Linux Libertine O', 'Libertinus Serif', 'Times New Roman', serif"
+CJK_FONT = "'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif"
+CODE_FONT = "'Inconsolata', 'DejaVu Sans Mono', monospace"
 INK = '#0b0b0b'
 MUTED = '#52514e'
 GRID = '#e4e3df'
@@ -43,11 +47,11 @@ ENGLISH = {
     '周期数': 'Cycles',
     '行数': 'Rows',
     '输入': 'Input',
-    '1 折叠（vsxpose）': '1 Fold (vsxpose)',
+    '1 折叠（`vsxpose`）': '1 Fold (`vsxpose`)',
     '同一行变成 16 列，每列 8 个': 'One row becomes 16 columns of 8',
     '2 列内排序': '2 Sort within columns',
-    '数出列内名次，vst.iar 按名次写': 'Rank within column; vst.iar writes by rank',
-    '3 跨组数秩：vrot 把别的组的列对齐过来，对方的列降序，三次比较二分数出有几个排在前面': '3 Cross-group rank: vrot aligns another group\'s column; it is descending, so three comparisons binary-search how many precede',
+    '数出列内名次，`vst.iar` 按名次写': 'Rank within column; `vst.iar` writes by rank',
+    '3 跨组数秩：`vrot` 把别的组的列对齐过来，对方的列降序，三次比较二分数出有几个排在前面': '3 Cross-group rank: `vrot` aligns another group\'s column; it is descending, so three comparisons binary-search how many precede',
     '自己的列': 'Own column',
     '旋转过来的列': 'Rotated column',
     '比较前的区间': 'Before comparing',
@@ -94,9 +98,21 @@ class Svg:
         self.parts: list[str] = [f'<rect x="0" y="0" width="{width}" height="{height}" fill="{SURFACE}"/>']
 
     def text(self, x: float, y: float, content: str, *, size: float = 13, anchor: str = 'start', color: str = INK, weight: str = 'normal') -> None:
-        # $...$ 只标记数学变量；数字、标点、单位与说明文字保持正体。
-        parts = re.split(r'(\$[^$]+\$)', translate(content))
-        text = ''.join(f'<tspan font-family="Liberation Serif, serif" font-style="italic">{escape(part[1:-1])}</tspan>' if part.startswith('$') else escape(part) for part in parts)
+        # 860 px 的图按 paper/md2tex.py 的宽度约定印成通栏，12 px 约为 7 pt；更宽的图同步放大字号。
+        size = round(size * max(1, self.width / 860), 2)
+        # 显式指定中文片段的宋体，拉丁字母仍用论文正文的 Libertine。
+        parts = re.split(r'(\$[^$]+\$|`[^`]+`|[\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef]+)', translate(content))
+        spans = []
+        for part in parts:
+            if part.startswith('$'):
+                spans.append(f'<tspan font-style="italic">{escape(part[1:-1])}</tspan>')
+            elif part.startswith('`'):
+                spans.append(f'<tspan font-family="{CODE_FONT}" font-weight="normal">{escape(part[1:-1])}</tspan>')
+            elif part and ord(part[0]) >= 0x2e80:
+                spans.append(f'<tspan font-family="{CJK_FONT}">{escape(part)}</tspan>')
+            else:
+                spans.append(escape(part))
+        text = ''.join(spans)
         self.parts.append(f'<text x="{x:.1f}" y="{y:.1f}" font-size="{size}" text-anchor="{anchor}" fill="{color}" font-weight="{weight}">{text}</text>')
 
     def line(self, x1: float, y1: float, x2: float, y2: float, *, color: str = MUTED, width: float = 1, dash: str = '', arrow: bool = False) -> None:
@@ -227,14 +243,14 @@ def fold_figure() -> None:
 
     width = groups * (8 * cell + 6) + 24
     panel(20, '输入', f'第 {r} 行的 128 个元素', lambda s, l, g: SOURCE if s == r else SURFACE)
-    panel(20 + width + 20, '1 折叠（vsxpose）', '同一行变成 16 列，每列 8 个', lambda s, l, g: SOURCE if l == r else SURFACE)
+    panel(20 + width + 20, '1 折叠（`vsxpose`）', '同一行变成 16 列，每列 8 个', lambda s, l, g: SOURCE if l == r else SURFACE)
     # 列内排序：各列按名次从深到浅；列内名次随组变化，这里只示意降序。
-    panel(20 + 2 * (width + 20), '2 列内排序', '数出列内名次，vst.iar 按名次写', lambda s, l, g: tone(s) if l == r else SURFACE)
+    panel(20 + 2 * (width + 20), '2 列内排序', '数出列内名次，`vst.iar` 按名次写', lambda s, l, g: tone(s) if l == r else SURFACE)
     for i in range(2):
         svg.line(20 + (i + 1) * width + i * 20 + 2, 86, 20 + (i + 1) * width + i * 20 + 16, 86, arrow=True)
     # 第三步：一列与旋转过来的另一列比较，二分查找。
     x0, y0 = 40, 180
-    svg.text(20, y0 - 8, '3 跨组数秩：vrot 把别的组的列对齐过来，对方的列降序，三次比较二分数出有几个排在前面', size=13)
+    svg.text(20, y0 - 8, '3 跨组数秩：`vrot` 把别的组的列对齐过来，对方的列降序，三次比较二分数出有几个排在前面', size=13)
     for i, name in enumerate(('自己的列', '旋转过来的列')):
         for s in range(8):
             svg.rect(x0 + i * 160 + s * 18, y0 + 14, 18, 18, fill=tone(s), stroke=SURFACE)
@@ -316,7 +332,7 @@ def rows_figure() -> None:
             for r, v in sorted(transposed.items()):
                 svg.dot(x(r), y(v), color=SOURCE, hollow=True)
             last = max(transposed)
-            svg.text(x(last) + 6, y(transposed[last]) - 6, 'transposed', size=12)
+            svg.text(x(last) + 6, y(transposed[last]) - 6, '`transposed`', size=12)
     svg.save('rows.svg')
 
 def overview_figure(cases: dict[str, dict[str, float]]) -> None:
@@ -353,7 +369,7 @@ def overview_figure(cases: dict[str, dict[str, float]]) -> None:
             if label in candidates and candidates[label] < ours:
                 ours, kind = candidates[label], PATCH if label in ('basic8', 'basic16', 'basic32', 'rows16_16') else REWRITE
             ratio = ours / found['official']
-            shape = f"[{found['rows']},{found['width']}] $k$={found['k']}" + (' 沿 axis 0' if found['axis'] == 0 else '')
+            shape = f"[{found['rows']},{found['width']}] $k$ = {found['k']}" + (' 沿 axis 0' if found['axis'] == 0 else '')
             svg.text(left - 10, y + 13, shape, size=12, anchor='end', color=MUTED)
             start, end = sorted((x(1), x(ratio)))
             svg.rect(start, y + 3, max(end - start, 1), 14, fill=kind, radius=2)

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="860" height="270" viewBox="0 0 860 270" font-family="'Noto Sans CJK SC', 'Source Han Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="270" viewBox="0 0 860 270" font-family="'Linux Libertine O', 'Libertinus Serif', 'Times New Roman', serif">
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#52514e"/></marker></defs>
 <rect x="0" y="0" width="860" height="270" fill="#ffffff"/>
 <text x="20.0" y="28.0" font-size="14" text-anchor="start" fill="#0b0b0b" font-weight="bold">Input</text>
@@ -196,7 +196,7 @@
 <rect x="216.0" y="106.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <text x="230.0" y="86.0" font-size="14" text-anchor="start" fill="#52514e" font-weight="normal">…</text>
 <text x="20.0" y="136.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">The 128 elements of row 2</text>
-<text x="274.0" y="28.0" font-size="14" text-anchor="start" fill="#0b0b0b" font-weight="bold">1 Fold (vsxpose)</text>
+<text x="274.0" y="28.0" font-size="14" text-anchor="start" fill="#0b0b0b" font-weight="bold">1 Fold (<tspan font-family="'Inconsolata', 'DejaVu Sans Mono', monospace" font-weight="normal">vsxpose</tspan>)</text>
 <rect x="274.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="282.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="290.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#2a78d6" stroke="#e4e3df"/>
@@ -585,10 +585,10 @@
 <rect x="716.0" y="106.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="724.0" y="106.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <text x="738.0" y="86.0" font-size="14" text-anchor="start" fill="#52514e" font-weight="normal">…</text>
-<text x="528.0" y="136.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">Rank within column; vst.iar writes by rank</text>
+<text x="528.0" y="136.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">Rank within column; <tspan font-family="'Inconsolata', 'DejaVu Sans Mono', monospace" font-weight="normal">vst.iar</tspan> writes by rank</text>
 <line x1="256.0" y1="86.0" x2="270.0" y2="86.0" stroke="#52514e" stroke-width="1" marker-end="url(#arrow)"/>
 <line x1="510.0" y1="86.0" x2="524.0" y2="86.0" stroke="#52514e" stroke-width="1" marker-end="url(#arrow)"/>
-<text x="20.0" y="172.0" font-size="13" text-anchor="start" fill="#0b0b0b" font-weight="normal">3 Cross-group rank: vrot aligns another group's column; it is descending, so three comparisons binary-search how many precede</text>
+<text x="20.0" y="172.0" font-size="13" text-anchor="start" fill="#0b0b0b" font-weight="normal">3 Cross-group rank: <tspan font-family="'Inconsolata', 'DejaVu Sans Mono', monospace" font-weight="normal">vrot</tspan> aligns another group's column; it is descending, so three comparisons binary-search how many precede</text>
 <rect x="40.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#104281" stroke="#ffffff"/>
 <rect x="58.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#1c5cab" stroke="#ffffff"/>
 <rect x="76.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#2a78d6" stroke="#ffffff"/>

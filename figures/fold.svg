@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="860" height="270" viewBox="0 0 860 270" font-family="'Noto Sans CJK SC', 'Source Han Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="270" viewBox="0 0 860 270" font-family="'Linux Libertine O', 'Libertinus Serif', 'Times New Roman', serif">
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#52514e"/></marker></defs>
 <rect x="0" y="0" width="860" height="270" fill="#ffffff"/>
-<text x="20.0" y="28.0" font-size="14" text-anchor="start" fill="#0b0b0b" font-weight="bold">输入</text>
+<text x="20.0" y="28.0" font-size="14" text-anchor="start" fill="#0b0b0b" font-weight="bold"><tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">输入</tspan></text>
 <rect x="20.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="28.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="36.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
@@ -195,8 +195,8 @@
 <rect x="208.0" y="106.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="216.0" y="106.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <text x="230.0" y="86.0" font-size="14" text-anchor="start" fill="#52514e" font-weight="normal">…</text>
-<text x="20.0" y="136.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">第 2 行的 128 个元素</text>
-<text x="274.0" y="28.0" font-size="14" text-anchor="start" fill="#0b0b0b" font-weight="bold">1 折叠（vsxpose）</text>
+<text x="20.0" y="136.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal"><tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">第</tspan> 2 <tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">行的</tspan> 128 <tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">个元素</tspan></text>
+<text x="274.0" y="28.0" font-size="14" text-anchor="start" fill="#0b0b0b" font-weight="bold">1 <tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">折叠（</tspan><tspan font-family="'Inconsolata', 'DejaVu Sans Mono', monospace" font-weight="normal">vsxpose</tspan><tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">）</tspan></text>
 <rect x="274.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="282.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="290.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#2a78d6" stroke="#e4e3df"/>
@@ -390,8 +390,8 @@
 <rect x="462.0" y="106.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="470.0" y="106.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <text x="484.0" y="86.0" font-size="14" text-anchor="start" fill="#52514e" font-weight="normal">…</text>
-<text x="274.0" y="136.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">同一行变成 16 列，每列 8 个</text>
-<text x="528.0" y="28.0" font-size="14" text-anchor="start" fill="#0b0b0b" font-weight="bold">2 列内排序</text>
+<text x="274.0" y="136.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal"><tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">同一行变成</tspan> 16 <tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">列，每列</tspan> 8 <tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">个</tspan></text>
+<text x="528.0" y="28.0" font-size="14" text-anchor="start" fill="#0b0b0b" font-weight="bold">2 <tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">列内排序</tspan></text>
 <rect x="528.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="536.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="544.0" y="50.0" width="8.0" height="8.0" rx="0" fill="#104281" stroke="#e4e3df"/>
@@ -585,10 +585,10 @@
 <rect x="716.0" y="106.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="724.0" y="106.0" width="8.0" height="8.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <text x="738.0" y="86.0" font-size="14" text-anchor="start" fill="#52514e" font-weight="normal">…</text>
-<text x="528.0" y="136.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">数出列内名次，vst.iar 按名次写</text>
+<text x="528.0" y="136.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal"><tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">数出列内名次，</tspan><tspan font-family="'Inconsolata', 'DejaVu Sans Mono', monospace" font-weight="normal">vst.iar</tspan> <tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">按名次写</tspan></text>
 <line x1="256.0" y1="86.0" x2="270.0" y2="86.0" stroke="#52514e" stroke-width="1" marker-end="url(#arrow)"/>
 <line x1="510.0" y1="86.0" x2="524.0" y2="86.0" stroke="#52514e" stroke-width="1" marker-end="url(#arrow)"/>
-<text x="20.0" y="172.0" font-size="13" text-anchor="start" fill="#0b0b0b" font-weight="normal">3 跨组数秩：vrot 把别的组的列对齐过来，对方的列降序，三次比较二分数出有几个排在前面</text>
+<text x="20.0" y="172.0" font-size="13" text-anchor="start" fill="#0b0b0b" font-weight="normal">3 <tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">跨组数秩：</tspan><tspan font-family="'Inconsolata', 'DejaVu Sans Mono', monospace" font-weight="normal">vrot</tspan> <tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">把别的组的列对齐过来，对方的列降序，三次比较二分数出有几个排在前面</tspan></text>
 <rect x="40.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#104281" stroke="#ffffff"/>
 <rect x="58.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#1c5cab" stroke="#ffffff"/>
 <rect x="76.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#2a78d6" stroke="#ffffff"/>
@@ -597,7 +597,7 @@
 <rect x="130.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#9ec5f4" stroke="#ffffff"/>
 <rect x="148.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#b7d3f6" stroke="#ffffff"/>
 <rect x="166.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
-<text x="40.0" y="230.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">自己的列</text>
+<text x="40.0" y="230.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal"><tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">自己的列</tspan></text>
 <rect x="200.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#104281" stroke="#ffffff"/>
 <rect x="218.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#1c5cab" stroke="#ffffff"/>
 <rect x="236.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#2a78d6" stroke="#ffffff"/>
@@ -606,7 +606,7 @@
 <rect x="290.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#9ec5f4" stroke="#ffffff"/>
 <rect x="308.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#b7d3f6" stroke="#ffffff"/>
 <rect x="326.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
-<text x="200.0" y="230.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">旋转过来的列</text>
+<text x="200.0" y="230.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal"><tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">旋转过来的列</tspan></text>
 <rect x="380.0" y="194.0" width="144.0" height="18.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="380.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
 <rect x="398.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
@@ -616,15 +616,15 @@
 <rect x="470.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
 <rect x="488.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
 <rect x="506.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
-<text x="380.0" y="230.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">比较前的区间</text>
+<text x="380.0" y="230.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal"><tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">比较前的区间</tspan></text>
 <rect x="530.0" y="194.0" width="144.0" height="18.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="602.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
 <rect x="620.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
 <rect x="638.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
 <rect x="656.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
-<text x="530.0" y="230.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">第 1 次比较后</text>
+<text x="530.0" y="230.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal"><tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">第</tspan> 1 <tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">次比较后</tspan></text>
 <rect x="680.0" y="194.0" width="144.0" height="18.0" rx="0" fill="#ffffff" stroke="#e4e3df"/>
 <rect x="752.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
 <rect x="770.0" y="194.0" width="18.0" height="18.0" rx="0" fill="#cde2fb" stroke="#ffffff"/>
-<text x="680.0" y="230.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal">第 2 次比较后</text>
+<text x="680.0" y="230.0" font-size="12" text-anchor="start" fill="#52514e" font-weight="normal"><tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">第</tspan> 2 <tspan font-family="'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif">次比较后</tspan></text>
 </svg>
